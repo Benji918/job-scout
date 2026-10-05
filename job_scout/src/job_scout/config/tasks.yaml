@@ -13,23 +13,53 @@ analyze_profile_task:
 scout_jobs_task:
   description: >
     Using the Search Manifest validated by the orchestrator, execute DIVERSE searches 
-    across MULTIPLE job boards and search engines to find live job postings. 
+    across MULTIPLE job boards and search engines to find FRESH (≤14 days old), 
+    FULLY REMOTE (worldwide) job postings.
     
-    REQUIRED SEARCH STRATEGY:
-    1. Use SerperDevTool for Google-based searches targeting: site:linkedin.com/jobs, site:indeed.com, site:glassdoor.com, site:wellfound.com, site:stackoverflow.com/jobs
-    2. Use EXASearchTool for neural search with content highlights across job boards
-    3. Use FirecrawlSearchTool to search and FirecrawlScrapeWebsiteTool to extract full job descriptions
-    4. Search company career pages directly for target companies
-    5. Search niche tech job boards (e.g., dice.com, builtin.com, hired.com)
+    REQUIRED SEARCH STRATEGY WITH DATE & REMOTE FILTERS:
     
-    Formulate boolean search strings for each board. Return a raw, unfiltered list 
+    1. SERPER (Google-based) - Use these search patterns with date/recency filters:
+       - LinkedIn: site:linkedin.com/jobs ("python" OR "backend") "remote" "posted 1 day ago" OR "posted 2 days ago" OR "posted 3 days ago" OR "posted 4 days ago" OR "posted 5 days ago" OR "posted 6 days ago" OR "posted 1 week ago" OR "posted 2 weeks ago" -"remote us" -"remote uk" -"remote eu" -"remote canada" -"remote australia" -hybrid
+       - Indeed: site:indeed.com ("python" OR "backend") "remote" "posted today" OR "posted 1 day" OR "posted 2 days" OR "posted 3 days" OR "posted 4 days" OR "posted 5 days" OR "posted 6 days" OR "posted 7 days" OR "posted 14 days" -"remote us" -"remote uk" -hybrid
+       - Glassdoor: site:glassdoor.com ("python" OR "backend") "remote" "posted" -"remote us" -"remote uk" -hybrid
+       - Wellfound: site:wellfound.com ("python" OR "backend") "remote" "posted" -"remote us" -"remote uk" -hybrid
+       - Stack Overflow: site:stackoverflow.com/jobs ("python" OR "backend") "remote" -"remote us" -"remote uk" -hybrid
+    
+    2. EXA (Neural search) - Use with recency_days=14 and query:
+       "fully remote python backend developer job posted last 2 weeks worldwide remote anywhere"
+    
+    3. FIRECRAWL - Search job board URLs directly and scrape full descriptions:
+       - Extract posting date from each listing
+       - Verify "remote" location is truly worldwide (not region-locked)
+       - Filter out hybrid, onsite, or region-specific remote
+    
+    4. COMPANY CAREER PAGES - Search directly on target company sites with:
+       "remote" "python" "backend" AND filter by posting date ≤14 days
+    
+    5. NICHE TECH BOARDS - dice.com, builtin.com, hired.com, Otta, Y Combinator jobs:
+       Apply same date (≤14 days) and worldwide remote filters
+    
+    FORMULATE boolean search strings for each board. Return a raw, unfiltered list 
     of at least 10 well-formatted job listings from DIVERSE sources (minimum 3 
     different job boards/platforms).
+    
+    VALIDATION CHECKLIST FOR EACH LISTING:
+    ✓ Posted within last 14 days (extract and verify date)
+    ✓ Location explicitly says "Remote", "Fully Remote", "Worldwide Remote", "Anywhere", "Global Remote", "Work from Anywhere", "Distributed Team"
+    ✗ REJECT if: "Remote US", "Remote UK", "Remote EU", "Remote [Country]", "Hybrid", "Onsite", "Office required"
+    ✗ REJECT if posting date > 14 days old or date not found
   expected_output: >
-    A list of extracted job listings including Title, Company, Application URL, 
-    Source Job Board (LinkedIn/Indeed/Glassdoor/Wellfound/Company Site/Other), 
-    Full Job Description text, and Salary (if available). Must include listings 
-    from at least 3 different job board sources.
+    A list of extracted job listings including:
+    - Title, Company, Application URL
+    - Source Job Board (LinkedIn/Indeed/Glassdoor/Wellfound/Company Site/Other)
+    - Posting Date (MUST be within last 14 days)
+    - Location Type (MUST be "Fully Remote Worldwide" or equivalent)
+    - Full Job Description text
+    - Salary (if available)
+    - Verification Notes (confirming date ≤14 days and worldwide remote)
+    
+    Must include listings from at least 3 different job board sources.
+    Listings failing date or remote filters MUST be excluded.
   agent: job_scout
 
 review_opportunities_task:
@@ -38,9 +68,30 @@ review_opportunities_task:
     {cv_content}. Score each job, identifying any BLOCKERs (dealbreakers like
     location/clearance) or MAJOR MATCHES. Filter out roles that are a poor fit.
     Pass the analyzed, ranked list back to the orchestrator.
+    
+    MANDATORY VERIFICATION - REJECT IMMEDIATELY IF:
+    1. POSTING DATE > 14 DAYS AGO: Check "posted X days ago", "posted on [date]", 
+       "X days ago", "X weeks ago". If date > 14 days or missing → BLOCKER: "Stale posting"
+    2. REGION-LOCKED REMOTE: Location contains "Remote US", "Remote UK", "Remote EU", 
+       "Remote Canada", "Remote [Country]", "Hybrid", "Onsite", "Office" → 
+       BLOCKER: "Region-locked remote / Not fully remote worldwide"
+    3. Only ACCEPT locations explicitly stating: "Remote", "Fully Remote", 
+       "Worldwide Remote", "Remote - Anywhere", "Global Remote", "Distributed Team", 
+       "Work from Anywhere", "Remote (Worldwide)"
+    
+    For each ACCEPTED listing, score match percentage, list matching skills and gaps.
   expected_output: >
-    An evaluation report for each job listing, scoring the match percentage and
-    explicitly listing matching skills and gaps found between the CV and the job.
+    An evaluation report for each job listing including:
+    - Posting Date Verification (date found, age in days, PASS/FAIL)
+    - Remote Type Verification (location text found, PASS/FAIL)
+    - Fit Score (0-100%)
+    - Match Classification: BLOCKER / MAJOR MATCH / MINOR GAP
+    - Matching Skills (from CV)
+    - Gaps (missing requirements)
+    - Verdict: PROCEED / REJECT
+    
+    Listings failing date (>14 days) or remote (region-locked) verification 
+    MUST be marked BLOCKER with REJECT verdict.
   agent: opportunity_reviewer
 
 orchestrate_search_task:

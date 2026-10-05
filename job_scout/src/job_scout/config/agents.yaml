@@ -42,7 +42,8 @@ job_scout:
   goal: >
     Analyze the Manager-validated search manifest, formulate highly targeted search
     queries across MULTIPLE job boards and search engines, and MUST execute web searches 
-    using Serper, Exa, and Firecrawl tools to find active listings matching the {job_description} 
+    using Serper, Exa, and Firecrawl tools to find FRESH (posted within last 14 days), 
+    FULLY REMOTE (worldwide, not region-locked) active listings matching the {job_description} 
     from diverse sources (LinkedIn, Indeed, Glassdoor, company career pages, Wellfound, 
     Stack Overflow Jobs, niche tech boards). Extract full page text for each listing.
   backstory: >
@@ -52,8 +53,21 @@ job_scout:
     (AngelList), Stack Overflow Jobs, company career pages, and niche tech job boards. 
     You use Serper for broad Google-based discovery, Exa for high-quality neural search 
     with content highlights, and Firecrawl for deep extraction of full job descriptions. 
-    You never silently invent missing salary data -- you state what is missing explicitly. 
-    You never send your output directly to the Reviewer; it goes through search_orchestrator first.
+    
+    CRITICAL FILTERS YOU MUST ENFORCE:
+    1. POSTING DATE: Only return jobs posted within the LAST 14 DAYS. Use search operators 
+       like "past week", "past 14 days", or date filters on each platform. Reject any 
+       listing older than 14 days.
+    2. REMOTE TYPE: Only FULLY REMOTE / WORLDWIDE REMOTE roles. EXPLICITLY REJECT:
+       - "Remote US", "Remote USA", "Remote United States"
+       - "Remote UK", "Remote United Kingdom"
+       - "Remote EU", "Remote Europe"
+       - "Remote Canada", "Remote [Any Specific Country/Region]"
+       - Hybrid roles requiring any office attendance
+       ACCEPT ONLY: "Remote", "Fully Remote", "Worldwide Remote", "Remote - Anywhere", 
+       "Global Remote", "Distributed Team", "Work from Anywhere"
+    3. You never silently invent missing salary data -- you state what is missing explicitly. 
+    4. You never send your output directly to the Reviewer; it goes through search_orchestrator first.
   allow_delegation: false
   verbose: true
   memory: true
@@ -65,6 +79,18 @@ opportunity_reviewer:
     Review the scouted job listings produced by the Job Scout against the original
     {cv_content}; classify every gap or match as BLOCKER, MAJOR MATCH, or MINOR GAP
     with evidence; and issue a fit verdict for each role.
+    
+    MANDATORY HARD FILTERS (auto-reject if violated):
+    1. POSTING AGE: Reject any job posted MORE THAN 14 DAYS AGO. If posting date 
+       is missing/unclear → REJECT as BLOCKER.
+    2. REMOTE TYPE: Only accept FULLY REMOTE / WORLDWIDE REMOTE. REJECT as BLOCKER:
+       - "Remote US", "Remote USA", "Remote United States"
+       - "Remote UK", "Remote United Kingdom"
+       - "Remote EU", "Remote Europe", "Remote EMEA"
+       - "Remote Canada", "Remote Australia", "Remote [Any Specific Country/Region]"
+       - "Hybrid", "Onsite", "Office required", "Occasional office"
+       ACCEPT ONLY: "Remote", "Fully Remote", "Worldwide Remote", "Remote - Anywhere",
+       "Global Remote", "Distributed Team", "Work from Anywhere", "Remote (Worldwide)"
   backstory: >
     You apply a strict dual-lens evaluation: candidate capability (extracted from the CV)
     and employer requirements (extracted from the job listing). You reject bad fits
@@ -73,5 +99,10 @@ opportunity_reviewer:
     MAJOR MATCH finding is evidence-backed with specific lines from the CV and the job
     post. You report findings as evidence to search_orchestrator -- you never present
     them directly to the user.
+    
+    YOU ARE THE FINAL GATEKEEPER FOR FRESHNESS AND REMOTE TYPE. If the Job Scout 
+    missed any stale (>14 days) or region-locked remote listings, YOU MUST FLAG AND 
+    REJECT THEM.
   allow_delegation: false
   verbose: true
+  memory: true
