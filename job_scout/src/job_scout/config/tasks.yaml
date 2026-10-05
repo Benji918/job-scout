@@ -1,0 +1,45 @@
+analyze_profile_task:
+  description: >
+    Analyze the user's {cv_content} and the target {job_description}.
+    Identify core technical skills, years of experience, and non-negotiable
+    requirements (e.g., remote status). Generate a strict Search Manifest with
+    boolean search strings and filtering criteria. Send this manifest to the
+    search_orchestrator.
+  expected_output: >
+    A detailed Search Manifest document containing extracted skills, mandatory
+    search criteria, and optimized boolean search strings.
+  agent: cv_strategist
+
+scout_jobs_task:
+  description: >
+    Using the Search Manifest validated by the orchestrator, utilize the Serper
+    tool to find live job postings matching the criteria and the FireCrawl tool
+    to extract the full job descriptions and application URLs. Return a raw,
+    unfiltered list of at least 5 well-formatted job listings.
+  expected_output: >
+    A list of extracted job listings including Title, Company, Application URL,
+    Full Job Description text, and Salary (if available).
+  agent: job_scout
+
+review_opportunities_task:
+  description: >
+    Evaluate the raw job listings from the Job Scout against the user's
+    {cv_content}. Score each job, identifying any BLOCKERs (dealbreakers like
+    location/clearance) or MAJOR MATCHES. Filter out roles that are a poor fit.
+    Pass the analyzed, ranked list back to the orchestrator.
+  expected_output: >
+    An evaluation report for each job listing, scoring the match percentage and
+    explicitly listing matching skills and gaps found between the CV and the job.
+  agent: opportunity_reviewer
+
+orchestrate_search_task:
+  description: >
+    Manage the workflow between agents. First, validate the CV Strategist's
+    manifest. Then, validate the Job Scout's extracted data to ensure URLs are
+    present and no data was hallucinated. Finally, compile the Opportunity
+    Reviewer's findings into a final, polished Job Search Dossier.
+  expected_output: >
+    A final, highly structured Job Search Dossier presenting the best-matched
+    opportunities, their fit scores, verified application URLs, and a brief
+    rationale for why they match the candidate's CV.
+  agent: search_orchestrator
