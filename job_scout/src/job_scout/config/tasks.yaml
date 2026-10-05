@@ -12,13 +12,24 @@ analyze_profile_task:
 
 scout_jobs_task:
   description: >
-    Using the Search Manifest validated by the orchestrator, utilize the Serper
-    tool to find live job postings matching the criteria and the FireCrawl tool
-    to extract the full job descriptions and application URLs. Return a raw,
-    unfiltered list of at least 5 well-formatted job listings.
+    Using the Search Manifest validated by the orchestrator, execute DIVERSE searches 
+    across MULTIPLE job boards and search engines to find live job postings. 
+    
+    REQUIRED SEARCH STRATEGY:
+    1. Use SerperDevTool for Google-based searches targeting: site:linkedin.com/jobs, site:indeed.com, site:glassdoor.com, site:wellfound.com, site:stackoverflow.com/jobs
+    2. Use EXASearchTool for neural search with content highlights across job boards
+    3. Use FirecrawlSearchTool to search and FirecrawlScrapeWebsiteTool to extract full job descriptions
+    4. Search company career pages directly for target companies
+    5. Search niche tech job boards (e.g., dice.com, builtin.com, hired.com)
+    
+    Formulate boolean search strings for each board. Return a raw, unfiltered list 
+    of at least 10 well-formatted job listings from DIVERSE sources (minimum 3 
+    different job boards/platforms).
   expected_output: >
-    A list of extracted job listings including Title, Company, Application URL,
-    Full Job Description text, and Salary (if available).
+    A list of extracted job listings including Title, Company, Application URL, 
+    Source Job Board (LinkedIn/Indeed/Glassdoor/Wellfound/Company Site/Other), 
+    Full Job Description text, and Salary (if available). Must include listings 
+    from at least 3 different job board sources.
   agent: job_scout
 
 review_opportunities_task:
