@@ -39,27 +39,47 @@ scout_jobs_task:
     5. NICHE TECH BOARDS - dice.com, builtin.com, hired.com, Otta, Y Combinator jobs:
        Apply same date (≤14 days) and worldwide remote filters
     
-    FORMULATE boolean search strings for each board. Return a raw, unfiltered list 
-    of at least 10 well-formatted job listings from DIVERSE sources (minimum 3 
-    different job boards/platforms).
+    FORMULATE boolean search strings for each board, then execute them. There is
+    NO minimum number of listings and NO required number of sources. Quality is
+    the only objective: return only verified listings that pass every gate in the
+    validation checklist below.
     
+    HARD GATE - a listing qualifies ONLY if ALL of the following are true:
+      1. You observed it in live tool output during this run (not from memory,
+         not from prior runs, not reconstructed).
+      2. Its posting date is present on the page and is ≤14 days old when
+         measured against today's date. No date, vague date, or a date you had to
+         infer = NOT QUALIFIED.
+      3. Its location text explicitly states worldwide / anywhere / global
+         remote, or explicitly states there is no region restriction. A bare
+         "Remote" with no scope = NOT QUALIFIED.
+      4. It has a real, resolvable application URL and extracted description text.
+      5. It is a duplicate-free, distinct role.
+    
+    If zero listings pass the hard gate, STOP SEARCHING AND RETURN NOTHING.
+    Your output MUST be empty: no list, no header, no explanation, no "no
+    results found" message, no near-miss roles, no suggestions, no advice.
+    Do not relax rule 1, 2, or 3 to produce a result. Do not invent a listing.
+    An empty return is the correct, expected, and complete answer.
+
     VALIDATION CHECKLIST FOR EACH LISTING:
-    ✓ Posted within last 14 days (extract and verify date)
-    ✓ Location explicitly says "Remote", "Fully Remote", "Worldwide Remote", "Anywhere", "Global Remote", "Work from Anywhere", "Distributed Team"
-    ✗ REJECT if: "Remote US", "Remote UK", "Remote EU", "Remote [Country]", "Hybrid", "Onsite", "Office required"
-    ✗ REJECT if posting date > 14 days old or date not found
+    ✓ Posted within last 14 days (date extracted from the page and verified)
+    ✓ Location explicitly states worldwide scope ("Worldwide Remote", "Remote - Anywhere", "Global Remote", "Work from Anywhere", "Remote (Worldwide)", "Fully Remote" with no region restriction)
+    ✗ REJECT if: "Remote US", "Remote UK", "Remote EU", "Remote [Country]", "Remote [Region]", "Hybrid", "Onsite", "Office required", timezone or work-authorization constraints
+    ✗ REJECT if posting date > 14 days old, missing, vague, or inferred
   expected_output: >
-    A list of extracted job listings including:
+    ONLY the qualifying listings. If at least one listing passes every gate,
+    output for each:
     - Title, Company, Application URL
     - Source Job Board (LinkedIn/Indeed/Glassdoor/Wellfound/Company Site/Other)
-    - Posting Date (MUST be within last 14 days)
-    - Location Type (MUST be "Fully Remote Worldwide" or equivalent)
+    - Posting Date (verified, within last 14 days)
+    - Location Type (explicit worldwide remote wording quoted from the listing)
     - Full Job Description text
-    - Salary (if available)
-    - Verification Notes (confirming date ≤14 days and worldwide remote)
+    - Salary (only if stated on the page; otherwise "Not stated")
+    - Verification Notes (quote the date evidence and the worldwide-remote evidence)
     
-    Must include listings from at least 3 different job board sources.
-    Listings failing date or remote filters MUST be excluded.
+    If no listing passes every gate, the entire output MUST be empty. No
+    placeholder text, no summary, no apology, no substitute listings.
   agent: job_scout
 
 review_opportunities_task:
@@ -73,25 +93,33 @@ review_opportunities_task:
     1. POSTING DATE > 14 DAYS AGO: Check "posted X days ago", "posted on [date]", 
        "X days ago", "X weeks ago". If date > 14 days or missing → BLOCKER: "Stale posting"
     2. REGION-LOCKED REMOTE: Location contains "Remote US", "Remote UK", "Remote EU", 
-       "Remote Canada", "Remote [Country]", "Hybrid", "Onsite", "Office" → 
-       BLOCKER: "Region-locked remote / Not fully remote worldwide"
-    3. Only ACCEPT locations explicitly stating: "Remote", "Fully Remote", 
-       "Worldwide Remote", "Remote - Anywhere", "Global Remote", "Distributed Team", 
-       "Work from Anywhere", "Remote (Worldwide)"
+       "Remote Canada", "Remote [Country]", "Hybrid", "Onsite", "Office", or any
+       timezone/work-authorization constraint → BLOCKER: "Region-locked remote /
+       Not fully remote worldwide"
+    3. AMBIGUOUS REMOTE: A bare "Remote" with no stated location scope →
+       BLOCKER: "Remote scope unverified"
+    4. Only ACCEPT an explicit worldwide statement: "Worldwide Remote", 
+       "Remote - Anywhere", "Global Remote", "Work from Anywhere", 
+       "Remote (Worldwide)", "Fully Remote" with no region restriction
     
     For each ACCEPTED listing, score match percentage, list matching skills and gaps.
+    Report ONLY listings that pass all checks. Do not revisit, retry, or
+    re-justify a rejected listing, and do not pass rejected listings forward.
+    If no listing passes, return an empty report -- no summary, no alternatives.
   expected_output: >
-    An evaluation report for each job listing including:
+    An evaluation report for each ACCEPTED listing only, including:
     - Posting Date Verification (date found, age in days, PASS/FAIL)
-    - Remote Type Verification (location text found, PASS/FAIL)
+    - Remote Type Verification (exact location wording quoted, PASS/FAIL)
     - Fit Score (0-100%)
     - Match Classification: BLOCKER / MAJOR MATCH / MINOR GAP
     - Matching Skills (from CV)
     - Gaps (missing requirements)
     - Verdict: PROCEED / REJECT
     
-    Listings failing date (>14 days) or remote (region-locked) verification 
-    MUST be marked BLOCKER with REJECT verdict.
+    Listings failing date (>14 days), remote scope (region-locked or ambiguous),
+    or structure checks MUST be marked BLOCKER with REJECT verdict and MUST NOT
+    appear in the accepted section. If nothing passes, the entire output is
+    empty -- no report, no summary, no recommendations.
   agent: opportunity_reviewer
 
 orchestrate_search_task:
@@ -100,8 +128,25 @@ orchestrate_search_task:
     manifest. Then, validate the Job Scout's extracted data to ensure URLs are
     present and no data was hallucinated. Finally, compile the Opportunity
     Reviewer's findings into a final, polished Job Search Dossier.
+    
+    FINAL GATE - publish a job line ONLY if the listing has all of:
+      - a verified, resolvable application URL (GATE 1)
+      - a verified posting date ≤14 days old from today (GATE 2)
+      - explicit worldwide remote wording quoted from the listing (GATE 3)
+      - a PROCEED verdict from the Opportunity Reviewer with no BLOCKER (GATE 4)
+    Confirm each gate individually before publishing the line. Any listing that
+    fails, or whose evidence you cannot confirm, is dropped entirely -- not
+    annotated, not downgraded, not shown "for reference".
+    
+    If ZERO listings pass all four gates, your final answer MUST be empty.
+    Emit nothing: no dossier, no headings, no "no qualifying jobs found"
+    message, no explanation, no caveats, no suggestions, no next steps.
+    An empty answer is a valid, successful outcome and must not be padded.
   expected_output: >
-    A final, highly structured Job Search Dossier presenting the best-matched
-    opportunities, their fit scores, verified application URLs, and a brief
-    rationale for why they match the candidate's CV.
+    If at least one listing passes all four gates: a highly structured Job
+    Search Dossier containing ONLY those listings, each with its fit score,
+    verified application URL, posting date, quoted worldwide-remote evidence,
+    and a brief rationale tied to the candidate's CV.
+    
+    If zero listings pass: empty output. Absolutely nothing else.
   agent: search_orchestrator
