@@ -5,9 +5,18 @@ analyze_profile_task:
     requirements (e.g., remote status). Generate a strict Search Manifest with
     boolean search strings and filtering criteria. Send this manifest to the
     search_orchestrator.
+
+    The manifest MUST contain a SOURCE PRIORITY PLAN naming, in order:
+      TIER 1 - employer career pages and ATS boards (Greenhouse, Lever, Ashby,
+               Workable, Recruitee, SmartRecruiters, Personio, Rippling), with
+               concrete target companies and their career-page/ATS URL patterns;
+      TIER 2 - niche and tech-specific boards;
+      TIER 3 - large aggregators (LinkedIn, Indeed, Glassdoor), used last.
   expected_output: >
     A detailed Search Manifest document containing extracted skills, mandatory
-    search criteria, and optimized boolean search strings.
+    search criteria, optimized boolean search strings, and a Source Priority
+    Plan that lists TIER 1 employer career pages (with concrete company names
+    and URL patterns) ahead of TIER 2 niche boards and TIER 3 aggregators.
   agent: cv_strategist
 
 scout_jobs_task:
@@ -17,29 +26,57 @@ scout_jobs_task:
     FULLY REMOTE (worldwide) job postings.
     
     REQUIRED SEARCH STRATEGY WITH DATE & REMOTE FILTERS:
-    
-    1. SERPER (Google-based) - Use these search patterns with date/recency filters:
-       - LinkedIn: site:linkedin.com/jobs ("python" OR "backend") "remote" "posted 1 day ago" OR "posted 2 days ago" OR "posted 3 days ago" OR "posted 4 days ago" OR "posted 5 days ago" OR "posted 6 days ago" OR "posted 1 week ago" OR "posted 2 weeks ago" -"remote us" -"remote uk" -"remote eu" -"remote canada" -"remote australia" -hybrid
-       - Indeed: site:indeed.com ("python" OR "backend") "remote" "posted today" OR "posted 1 day" OR "posted 2 days" OR "posted 3 days" OR "posted 4 days" OR "posted 5 days" OR "posted 6 days" OR "posted 7 days" OR "posted 14 days" -"remote us" -"remote uk" -hybrid
-       - Glassdoor: site:glassdoor.com ("python" OR "backend") "remote" "posted" -"remote us" -"remote uk" -hybrid
-       - Wellfound: site:wellfound.com ("python" OR "backend") "remote" "posted" -"remote us" -"remote uk" -hybrid
-       - Stack Overflow: site:stackoverflow.com/jobs ("python" OR "backend") "remote" -"remote us" -"remote uk" -hybrid
-    
-    2. EXA (Neural search) - Use with recency_days=14 and query:
+    Work the tiers in order. Do not start on TIER 3 aggregators until TIER 1 and
+    TIER 2 passes are complete.
+
+    1. TIER 1 - COMPANY CAREER PAGES & ATS (DO THIS FIRST, SPEND MOST EFFORT HERE)
+       - Search employer-owned career pages and their ATS endpoints directly:
+         Greenhouse (boards.greenhouse.io / job-boards.greenhouse.io),
+         Lever (jobs.lever.co), Ashby (jobs.ashbyhq.com),
+         Workable (apply.workable.com), Recruitee, SmartRecruiters,
+         Personio, Rippling, Workday.
+       - Serper patterns:
+         site:boards.greenhouse.io ("python" OR "backend") "remote"
+         site:jobs.lever.co ("python" OR "backend") "remote"
+         site:jobs.ashbyhq.com ("python" OR "backend") "remote"
+         site:apply.workable.com ("python" OR "backend") "remote"
+         ("python" OR "backend") "remote" site:<target-company-domain>/careers
+       - For each target company named in the Source Priority Plan, open its
+         careers page and check it directly.
+       - Extract the posting date from the ATS page itself (not from a board).
+
+    2. TIER 2 - NICHE TECH BOARDS
+       - dice.com, builtin.com, hired.com, Otta, Y Combinator jobs, Wellfound,
+         Stack Overflow Jobs, remote-specific boards.
+       - Apply the same date (≤14 days) and worldwide-remote filters.
+
+    3. TIER 3 - AGGREGATORS (LAST RESORT ONLY)
+       - LINKEDIN: site:linkedin.com/jobs ("python" OR "backend") "remote" "posted 1 day ago" OR "posted 2 days ago" OR "posted 3 days ago" OR "posted 4 days ago" OR "posted 5 days ago" OR "posted 6 days ago" OR "posted 1 week ago" OR "posted 2 weeks ago" -"remote us" -"remote uk" -"remote eu" -"remote canada" -"remote australia" -hybrid
+       - INDEED: site:indeed.com ("python" OR "backend") "remote" "posted today" OR "posted 1 day" OR "posted 2 days" OR "posted 3 days" OR "posted 4 days" OR "posted 5 days" OR "posted 6 days" OR "posted 7 days" OR "posted 14 days" -"remote us" -"remote uk" -hybrid
+       - GLASSDOOR: site:glassdoor.com ("python" OR "backend") "remote" "posted" -"remote us" -"remote uk" -hybrid
+       - Use these ONLY for roles you could not find on the employer's own page.
+
+    4. EXA (Neural search) - recency_days=14, query:
        "fully remote python backend developer job posted last 2 weeks worldwide remote anywhere"
-    
-    3. FIRECRAWL - Search job board URLs directly and scrape full descriptions:
-       - Extract posting date from each listing
+
+    5. FIRECRAWL - Open and scrape each candidate URL (career page or ATS first):
+       - Extract posting date from the page
        - Verify "remote" location is truly worldwide (not region-locked)
        - Filter out hybrid, onsite, or region-specific remote
-    
-    4. COMPANY CAREER PAGES - Search directly on target company sites with:
-       "remote" "python" "backend" AND filter by posting date ≤14 days
-    
-    5. NICHE TECH BOARDS - dice.com, builtin.com, hired.com, Otta, Y Combinator jobs:
-       Apply same date (≤14 days) and worldwide remote filters
-    
-    FORMULATE boolean search strings for each board, then execute them. There is
+
+    DEDUPLICATION (MANDATORY):
+    - The task context contains {previously_seen_jobs}. Never return a listing
+      already on that list. Match on normalized URL (ignore scheme, www, query
+      string, trailing slash) and on company + title.
+    - A role re-posted on a different board is the SAME listing, not a new one.
+      Return it once, using the TIER 1 employer URL.
+    - Do not return two listings for the same company + title in one run.
+
+    SOURCE LABELLING: tag each returned listing TIER 1 (company career page /
+    ATS), TIER 2 (niche board) or TIER 3 (aggregator), and prefer TIER 1 URLs
+    when the same role appears in more than one place.
+
+    FORMULATE boolean search strings for each source, then execute them. There is
     NO minimum number of listings and NO required number of sources. Quality is
     the only objective: return only verified listings that pass every gate in the
     validation checklist below.
@@ -55,6 +92,8 @@ scout_jobs_task:
          "Remote" with no scope = NOT QUALIFIED.
       4. It has a real, resolvable application URL and extracted description text.
       5. It is a duplicate-free, distinct role.
+      6. It does not appear in {previously_seen_jobs} (URL or company + title).
+         Already-shown roles are permanently excluded, however good they are.
     
     If zero listings pass the hard gate, STOP SEARCHING AND RETURN NOTHING.
     Your output MUST be empty: no list, no header, no explanation, no "no
@@ -67,11 +106,13 @@ scout_jobs_task:
     ✓ Location explicitly states worldwide scope ("Worldwide Remote", "Remote - Anywhere", "Global Remote", "Work from Anywhere", "Remote (Worldwide)", "Fully Remote" with no region restriction)
     ✗ REJECT if: "Remote US", "Remote UK", "Remote EU", "Remote [Country]", "Remote [Region]", "Hybrid", "Onsite", "Office required", timezone or work-authorization constraints
     ✗ REJECT if posting date > 14 days old, missing, vague, or inferred
+    ✗ REJECT if the URL or company + title already appears in {previously_seen_jobs}
   expected_output: >
     ONLY the qualifying listings. If at least one listing passes every gate,
     output for each:
-    - Title, Company, Application URL
-    - Source Job Board (LinkedIn/Indeed/Glassdoor/Wellfound/Company Site/Other)
+    - Title, Company, Application URL (prefer the employer career-page/ATS URL)
+    - Source Job Board (Company Site/ATS, LinkedIn/Indeed/Glassdoor/Wellfound/Other)
+    - Source Tier (TIER 1 company career page / ATS, TIER 2 niche board, TIER 3 aggregator)
     - Posting Date (verified, within last 14 days)
     - Location Type (explicit worldwide remote wording quoted from the listing)
     - Full Job Description text
@@ -79,7 +120,8 @@ scout_jobs_task:
     - Verification Notes (quote the date evidence and the worldwide-remote evidence)
     
     If no listing passes every gate, the entire output MUST be empty. No
-    placeholder text, no summary, no apology, no substitute listings.
+    placeholder text, no summary, no apology, no substitute listings, and
+    nothing carried over from a previous run.
   agent: job_scout
 
 review_opportunities_task:
@@ -98,7 +140,10 @@ review_opportunities_task:
        Not fully remote worldwide"
     3. AMBIGUOUS REMOTE: A bare "Remote" with no stated location scope →
        BLOCKER: "Remote scope unverified"
-    4. Only ACCEPT an explicit worldwide statement: "Worldwide Remote", 
+    4. ALREADY SEEN: The URL (normalized) or the company + title appears in
+       {previously_seen_jobs} → BLOCKER: "Already presented on a previous run".
+       A re-post on a different board is the same listing and also fails here.
+    5. Only ACCEPT an explicit worldwide statement: "Worldwide Remote", 
        "Remote - Anywhere", "Global Remote", "Work from Anywhere", 
        "Remote (Worldwide)", "Fully Remote" with no region restriction
     
@@ -108,6 +153,7 @@ review_opportunities_task:
     If no listing passes, return an empty report -- no summary, no alternatives.
   expected_output: >
     An evaluation report for each ACCEPTED listing only, including:
+    - Source Tier (TIER 1 company career page/ATS, TIER 2 niche board, TIER 3 aggregator)
     - Posting Date Verification (date found, age in days, PASS/FAIL)
     - Remote Type Verification (exact location wording quoted, PASS/FAIL)
     - Fit Score (0-100%)
@@ -117,9 +163,9 @@ review_opportunities_task:
     - Verdict: PROCEED / REJECT
     
     Listings failing date (>14 days), remote scope (region-locked or ambiguous),
-    or structure checks MUST be marked BLOCKER with REJECT verdict and MUST NOT
-    appear in the accepted section. If nothing passes, the entire output is
-    empty -- no report, no summary, no recommendations.
+    structure, or already-seen checks MUST be marked BLOCKER with REJECT verdict
+    and MUST NOT appear in the accepted section. If nothing passes, the entire
+    output is empty -- no report, no summary, no recommendations.
   agent: opportunity_reviewer
 
 orchestrate_search_task:
@@ -134,19 +180,28 @@ orchestrate_search_task:
       - a verified posting date ≤14 days old from today (GATE 2)
       - explicit worldwide remote wording quoted from the listing (GATE 3)
       - a PROCEED verdict from the Opportunity Reviewer with no BLOCKER (GATE 4)
+      - no match, by URL or by company + title, in {previously_seen_jobs} (GATE 5)
     Confirm each gate individually before publishing the line. Any listing that
     fails, or whose evidence you cannot confirm, is dropped entirely -- not
     annotated, not downgraded, not shown "for reference".
     
-    If ZERO listings pass all four gates, your final answer MUST be empty.
+    Cross-check GATE 5 yourself against {previously_seen_jobs}: the Scout and the
+    Reviewer may both miss a repeat, and a repeat must never reach the dossier.
+    A role the candidate has already seen is not an opportunity, however strong.
+    
+    ORDERING: list qualifying roles with TIER 1 (company career page / ATS) first,
+    then TIER 2 (niche boards), then TIER 3 (aggregators). If the same role
+    appears in several places, keep only the employer's own URL.
+    
+    If ZERO listings pass all five gates, your final answer MUST be empty.
     Emit nothing: no dossier, no headings, no "no qualifying jobs found"
     message, no explanation, no caveats, no suggestions, no next steps.
     An empty answer is a valid, successful outcome and must not be padded.
   expected_output: >
-    If at least one listing passes all four gates: a highly structured Job
+    If at least one listing passes all five gates: a highly structured Job
     Search Dossier containing ONLY those listings, each with its fit score,
     verified application URL, posting date, quoted worldwide-remote evidence,
-    and a brief rationale tied to the candidate's CV.
+    source tier, and a brief rationale tied to the candidate's CV.
     
     If zero listings pass: empty output. Absolutely nothing else.
   agent: search_orchestrator

@@ -7,9 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from job_scout.crew import JobScout
+from job_scout.seen_jobs import format_for_prompt, load_ledger, record_from_report
 
 def get_inputs():
     return {
+        "previously_seen_jobs": format_for_prompt(load_ledger()),
         "cv_content": """
         Senior Python Developer with 4+ years of experience.
         Backend Engineer specializing in Python, with hands-on production experience building REST APIs, optimizing databases, and shipping backend systems for multi-user platforms. 
@@ -33,8 +35,11 @@ def run():
     Run the crew.
     """
     inputs = get_inputs()
-    print("Initiating Job Search Run...")
+    seen_count = len(load_ledger())
+    print(f"Initiating Job Search Run... ({seen_count} previously seen listing(s) excluded)")
     result = JobScout().crew().kickoff(inputs=inputs)
+    added = record_from_report(result.raw)
+    print(f"Recorded {added} new listing(s) in the seen-jobs ledger.")
     print("\n==============================================\n")
     print("FINAL JOB SEARCH DOSSIER:\n")
     print(result)
