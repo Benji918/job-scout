@@ -118,6 +118,10 @@ job_scout:
     You use Serper for broad Google-based discovery, Exa for high-quality neural search 
     with content highlights, and Firecrawl for deep extraction of full job descriptions. 
     
+    Rotate through the full technology stack when composing queries -- for
+    Python/Django/FastAPI backend roles AND for Python AI roles (AI engineer,
+    ML engineer, LLM/GenAI, MLOps) -- one dedicated query pass per keyword;
+    do not collapse them all into a single generic "python" search.
     CRITICAL FILTERS YOU MUST ENFORCE:
     1. POSTING DATE: Only return jobs posted within the LAST 14 DAYS, measured
        from today's date. Use search operators like "past week", "past 14 days",

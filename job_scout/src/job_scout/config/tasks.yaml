@@ -35,12 +35,29 @@ scout_jobs_task:
          Lever (jobs.lever.co), Ashby (jobs.ashbyhq.com),
          Workable (apply.workable.com), Recruitee, SmartRecruiters,
          Personio, Rippling, Workday.
-       - Serper patterns:
-         site:boards.greenhouse.io ("python" OR "backend") "remote"
-         site:jobs.lever.co ("python" OR "backend") "remote"
-         site:jobs.ashbyhq.com ("python" OR "backend") "remote"
-         site:apply.workable.com ("python" OR "backend") "remote"
-         ("python" OR "backend") "remote" site:<target-company-domain>/careers
+       - Serper patterns (run one pass per technology keyword: python,
+         django, fastapi, "machine learning", "AI engineer", LLM engineer):
+         site:boards.greenhouse.io ("python") ("django" OR "fastapi") "remote"
+         site:jobs.lever.co ("python") ("django" OR "fastapi") "remote"
+         site:jobs.ashbyhq.com ("python") ("django" OR "fastapi") "remote"
+         site:apply.workable.com ("python") ("django" OR "fastapi") "remote"
+         ("python" OR "django" OR "fastapi") "remote" site:<target-company-domain>/careers
+       TECH-DEPTH BOOLEANS (rotate through each technology so no stack
+       is missed; every variant must still pass the 14-day + worldwide
+       filters):
+         ("django" OR "fastapi") "remote" ("worldwide" OR "anywhere") -"remote us" -"remote uk" -hybrid
+         ("python developer" OR "backend engineer") "django" "remote - anywhere"
+         ("python" AND "fastapi") ("jobs.lever.co" OR "boards.greenhouse.io") "remote"
+         "AI engineer" OR "machine learning engineer" "python" "remote worldwide"
+         ("LLM" OR "GenAI" OR "generative AI") "python" "work from anywhere"
+         "AI infrastructure" OR "MLOps" "python" "remote anywhere"
+         site:wttj.com OR site:remotive.com ("python" OR "django" OR "fastapi" OR "AI") "worldwide"
+         site:himalayas.app ("python" OR "django" OR "fastapi" OR "AI engineer") "global"
+         site:weworkremotely.com ("python" OR "django" OR "fastapi") ("100% remote" OR "anywhere")
+         site:remoteok.com ("python" OR "django" OR "fastapi" OR "machine learning")
+       Additional TIER-2 niche boards to query: weworkremotely.com,
+       remoteok.com, wttj.com (Welcome to the Jungle), remotive.com,
+       himalayas.app, justremote.co, nodesk.co, ai-jobs.net, ml-jobs.tech.
        - For each target company named in the Source Priority Plan, open its
          careers page and check it directly.
        - Extract the posting date from the ATS page itself (not from a board).
@@ -51,13 +68,14 @@ scout_jobs_task:
        - Apply the same date (≤14 days) and worldwide-remote filters.
 
     3. TIER 3 - AGGREGATORS (LAST RESORT ONLY)
-       - LINKEDIN: site:linkedin.com/jobs ("python" OR "backend") "remote" "posted 1 day ago" OR "posted 2 days ago" OR "posted 3 days ago" OR "posted 4 days ago" OR "posted 5 days ago" OR "posted 6 days ago" OR "posted 1 week ago" OR "posted 2 weeks ago" -"remote us" -"remote uk" -"remote eu" -"remote canada" -"remote australia" -hybrid
-       - INDEED: site:indeed.com ("python" OR "backend") "remote" "posted today" OR "posted 1 day" OR "posted 2 days" OR "posted 3 days" OR "posted 4 days" OR "posted 5 days" OR "posted 6 days" OR "posted 7 days" OR "posted 14 days" -"remote us" -"remote uk" -hybrid
-       - GLASSDOOR: site:glassdoor.com ("python" OR "backend") "remote" "posted" -"remote us" -"remote uk" -hybrid
+       - LINKEDIN: site:linkedin.com/jobs ("python" OR "django" OR "fastapi" OR "AI engineer") "remote" "posted 1 day ago" OR "posted 2 days ago" OR "posted 3 days ago" OR "posted 4 days ago" OR "posted 5 days ago" OR "posted 6 days ago" OR "posted 1 week ago" OR "posted 2 weeks ago" -"remote us" -"remote uk" -"remote eu" -"remote canada" -"remote australia" -hybrid
+       - INDEED: site:indeed.com ("python" OR "django" OR "fastapi" OR "AI engineer") "remote" "posted today" OR "posted 1 day" OR "posted 2 days" OR "posted 3 days" OR "posted 4 days" OR "posted 5 days" OR "posted 6 days" OR "posted 7 days" OR "posted 14 days" -"remote us" -"remote uk" -hybrid
+       - GLASSDOOR: site:glassdoor.com ("python" OR "django" OR "fastapi" OR "AI engineer") "remote" "posted" -"remote us" -"remote uk" -hybrid
        - Use these ONLY for roles you could not find on the employer's own page.
 
-    4. EXA (Neural search) - recency_days=14, query:
-       "fully remote python backend developer job posted last 2 weeks worldwide remote anywhere"
+    4. EXA (Neural search) - recency_days=14, query:       Run one EXA query per technology keyword (recency_days=14 each):
+       "fully remote senior python backend developer (Django or FastAPI) job posted last 2 weeks worldwide remote anywhere"
+       "fully remote AI engineer / machine learning engineer (Python, LLMs, MLOps) job posted last 2 weeks worldwide remote anywhere"
 
     5. FIRECRAWL - Open and scrape each candidate URL (career page or ATS first):
        - Extract posting date from the page
