@@ -1,0 +1,27 @@
+[project]
+name = "job_scout_nz"
+version = "0.1.0"
+description = "job_scout_nz - NZ accredited-employer job scout using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[tools]==1.15.22",
+    "firecrawl-py>=4.45.0",
+    "exa-py>=1.0.0",
+]
+
+[project.scripts]
+job_scout_nz = "job_scout_nz.main:run"
+run_crew = "job_scout_nz.main:run"
+train = "job_scout_nz.main:train"
+replay = "job_scout_nz.main:replay"
+test = "job_scout_nz.main:test"
+run_with_trigger = "job_scout_nz.main:run_with_trigger"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "crew"
+project_id = "a9e30901-01eb-4a3c-9e7a-1c6b6e0ee2ec"
