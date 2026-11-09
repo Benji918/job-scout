@@ -1,0 +1,257 @@
+analyze_profile_task:
+  description: >
+    Analyze the user's {cv_content} and the target {job_description} for the
+    NEW ZEALAND market. Identify core technical skills, years of experience,
+    and non-negotiable requirements (NZ location, visa sponsorship).
+    Generate a strict Search Manifest with boolean search strings and
+    filtering criteria. Send this manifest to the search_orchestrator.
+
+    The manifest MUST contain a SOURCE PRIORITY PLAN naming, in order:
+      TIER 1 - NZ job boards and accredited-employer listings (SEEK NZ
+               seek.co.nz, Trade Me Jobs trademe.co.nz/jobs, WorkHere
+               workhere.co.nz, careers.govt.nz for government roles, plus
+               Greenhouse/Lever/Ashby boards of NZ employers), with concrete
+               NZ target companies named (e.g. Xero, Trade Me, Datacom,
+               Spark, Kiwibank, Air New Zealand, Fonterra, Fisher & Paykel
+               Healthcare, Rocket Lab, Beca, Health New Zealand, and any
+               Green List tech employers in the manifest);
+      TIER 2 - employer-owned NZ career pages for every named company;
+      TIER 3 - Immigration NZ accredited-employer register lookups
+               (immigration.govt.nz) used ONLY to verify sponsor status, not
+               to source jobs;
+      TIER 4 - global aggregators (LinkedIn NZ, Indeed NZ), used last.
+    The manifest MUST also list the visa-sponsorship keywords to require:
+    "AEWV", "Accredited Employer Work Visa", "accredited employer",
+    "visa sponsorship", "Straight-to-Residence", "Green List",
+    "work visa support".
+  expected_output: >
+    A detailed Search Manifest document containing extracted skills, mandatory
+    NZ search criteria (location + visa sponsorship + posting age),
+    technology-specific boolean search strings (python, django, fastapi, and
+    AI keyword variants), a NZ company shortlist, and a Source Priority Plan
+    that lists TIER 1 NZ boards ahead of TIER 2 employer career pages, TIER 3
+    INZ register verification, and TIER 4 aggregators.
+  agent: cv_strategist
+
+scout_jobs_task:
+  description: >
+    Using the Search Manifest validated by the orchestrator, execute DIVERSE
+    searches across MULTIPLE New Zealand job boards and search engines to
+    find FRESH (<=21 days old), NZ-BASED job postings where the employer is
+    accredited or offers visa sponsorship (AEWV / Straight-to-Residence).
+
+    REQUIRED SEARCH STRATEGY WITH DATE, LOCATION & SPONSORSHIP FILTERS:
+    Work the tiers in order.
+
+    1. TIER 1 - NZ JOB BOARDS (DO THIS FIRST, SPEND MOST EFFORT HERE)
+       - Serper patterns (rotate each technology keyword from the manifest:
+         python, django, fastapi, "machine learning", "AI engineer"):
+         site:seek.co.nz ("python") "work visa" OR "AEWV" OR "accredited employer"
+         site:seek.co.nz ("django" OR "fastapi") "visa sponsorship"
+         site:trademe.co.nz/jobs ("python") ("accredited" OR "visa sponsorship" OR "AEWV")
+         site:workhere.co.nz ("python" OR "django" OR "AI engineer") "New Zealand"
+         site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com ("python") ("New Zealand" OR "Auckland" OR "Wellington") ("visa sponsorship" OR "AEWV" OR "accredited")
+         site:careers.govt.nz ("python") (offer sponsorship OR accredited)
+       TECH-DEPTH BOOLEANS (rotate per keyword; every variant must still pass
+       the 21-day + NZ + sponsorship filters):
+         ("python developer" OR "backend engineer") ("New Zealand") ("visa sponsorship" OR "AEWV" OR "straight to residence")
+         ("django" OR "fastapi") ("Auckland" OR "Wellington" OR "Christchurch") ("accredited employer" OR "visa sponsorship")
+         "AI engineer" OR "machine learning engineer" ("New Zealand") ("work visa" OR "accredited employer" OR "straight-to-residence")
+         ("green list") ("python" OR "software engineer") ("New Zealand")
+         ("straight-to-residence") ("python")
+       - For each target NZ company named in the Source Priority Plan, open
+         its careers page and check it directly.
+       - Extract the posting date from the source page itself.
+
+    2. TIER 2 - EMPLOYER NZ CAREER PAGES
+       - Open the NZ careers pages of every company in the manifest and
+         extract listings matching the profile; check their posting dates.
+
+    3. TIER 3 - INZ ACCREDITED-EMPLOYER VERIFICATION
+       - For any promising employer whose posting lacks an explicit
+         sponsorship statement, search:
+         site:immigration.govt.nz "<company name>" accredited employer
+         and verify whether the company is on the accredited-employer
+         register. Record the evidence (or the absence).
+
+    4. TIER 4 - AGGREGATORS (LAST RESORT ONLY)
+       - LINKEDIN: site:linkedin.com/jobs ("python" OR "django" OR "fastapi" OR "AI engineer") ("New Zealand") ("visa sponsorship" OR "AEWV" OR "accredited") "posted 1 day ago" OR "posted 2 days ago" OR ... OR "posted 3 weeks ago"
+       - Indeed NZ: site:nz.indeed.com ("python" OR "django" OR "fastapi") ("visa sponsorship" OR "AEWV") "posted 1 day" OR "posted 3 days" OR ... OR "posted 14 days"
+
+    5. EXA (Neural search) - run one query per technology keyword
+       (recency_days=21 each):
+       "New Zealand python backend developer (Django or FastAPI) job offering visa sponsorship or from an accredited employer, posted last 3 weeks"
+       "New Zealand AI / machine learning engineer (Python, LLMs, MLOps) job sponsoring work visa, posted last 3 weeks"
+
+    6. FIRECRAWL - Open and scrape each candidate URL (NZ board or employer
+       careers page first):
+       - Extract posting date from the page
+       - Verify the role is NZ-based (Auckland, Wellington, Christchurch,
+         Hamilton, Dunedin, Tauranga, or remote within NZ)
+       - Extract sponsorship evidence: "AEWV", "accredited employer",
+         "visa sponsorship available", "Straight-to-Residence", "Green List"
+       - Reject Australian locations, "PR/citizens only", or ambiguous
+         remote listings
+
+    DEDUPLICATION (MANDATORY):
+    - The task context contains {previously_seen_jobs}. Never return a listing
+      already on that list. Match on normalized URL (ignore scheme, www,
+      query string, trailing slash) and on company + title.
+    - A role re-posted on a different board is the SAME listing, not a new
+      one. Return it once, using the employer's own NZ URL when available.
+    - Do not return two listings for the same company + title in one run.
+
+    SOURCE LABELLING: tag each returned listing TIER 1 (NZ board),
+    TIER 2 (employer NZ careers page), or TIER 4 (aggregator), and prefer the
+    employer's own URL when the same role appears in more than one place.
+    Quote the sponsorship evidence found for each.
+
+    FORMULATE boolean search strings for each source, then execute them.
+    There is NO minimum number of listings and NO required number of sources.
+    Quality is the only objective.
+
+    HARD GATE - a listing qualifies ONLY if ALL of the following are true:
+      1. You observed it in live tool output during this run.
+      2. Its posting date is present on the page and is <=21 days old when
+         measured against today's date. No date, vague date, or a date you
+         had to infer = NOT QUALIFIED.
+      3. Its location is explicitly New Zealand (or remote within NZ).
+         Australian locations or a bare "Remote" with no scope = NOT QUALIFIED.
+      4. It shows an explicit sponsorship signal, OR you verified the
+         employer on the INZ accredited-employer register with a live tool
+         result in this run. Neither = NOT QUALIFIED.
+      5. It has a real, resolvable application URL and extracted description
+         text, and is a duplicate-free, distinct role.
+      6. It does not appear in {previously_seen_jobs} (URL or company +
+         title). Already-shown roles are permanently excluded.
+
+    If zero listings pass the hard gate, STOP SEARCHING AND RETURN NOTHING.
+    Your output MUST be empty: no list, no header, no explanation, no "no
+    results found" message, no near-miss roles, no suggestions, no advice.
+    Do not relax rule 1-4 to produce a result. Do not invent a listing.
+    An empty return is the correct, expected, and complete answer.
+
+    VALIDATION CHECKLIST FOR EACH LISTING:
+    v Posted within last 21 days (date extracted from the page and verified)
+    v Location explicitly New Zealand (city/region or "remote within NZ")
+    v Sponsorship evidence present ("AEWV", "accredited employer", "visa
+      sponsorship", "Straight-to-Residence", "Green List") or INZ register
+      verification recorded
+    x REJECT if: Australian location, "NZ citizens/PR only", "valid NZ work
+      visa required" with no sponsorship, hybrid/onsite in AU only, or
+      ambiguous "Remote"
+    x REJECT if posting date > 21 days old, missing, vague, or inferred
+    x REJECT if the URL or company + title already appears in
+      {previously_seen_jobs}
+  expected_output: >
+    ONLY the qualifying listings. If at least one listing passes every gate,
+    output for each:
+    - Title, Company, Application URL (prefer the employer's own NZ URL)
+    - Source (SEEK NZ / Trade Me Jobs / WorkHere / employer careers page /
+      INZ-verified company / LinkedIn NZ / Indeed NZ / Other)
+    - Source Tier (TIER 1 NZ board, TIER 2 employer careers page, TIER 4
+      aggregator)
+    - Posting Date (verified, within last 21 days)
+    - NZ Location (city/region, quoted from the listing)
+    - Visa Sponsorship Evidence (the exact sponsorship wording quoted from
+      the listing, or the INZ accredited-employer verification result)
+    - Full Job Description text
+    - Salary (only if stated on the page; otherwise "Not stated")
+    - Verification Notes (quote the date, location, and sponsorship evidence)
+
+    If no listing passes every gate, the entire output MUST be empty. No
+    placeholder text, no summary, no apology, no substitute listings.
+  agent: job_scout
+
+review_opportunities_task:
+  description: >
+    Evaluate the raw NZ job listings from the Job Scout against the user's
+    {cv_content}. Score each job, identifying any BLOCKERs (dealbreakers like
+    location, right-to-work, or no sponsorship) or MAJOR MATCHES. Filter out
+    roles that are a poor fit. Pass the analyzed, ranked list back to the
+    orchestrator.
+
+    MANDATORY VERIFICATION - REJECT IMMEDIATELY IF:
+    1. POSTING DATE > 21 DAYS AGO: Check "posted X days ago", "posted on
+       [date]", "X days ago", "X weeks ago". If date > 21 days or missing ->
+       BLOCKER: "Stale posting".
+    2. NON-NZ LOCATION: Australian cities or regions, trans-Tasman postings
+       where only the AU branch is hiring, no NZ location stated, or a bare
+       "Remote" with no scope -> BLOCKER: "Not a New Zealand listing".
+    3. NO SPONSORSHIP: "NZ citizens / PR only", "must already hold NZ work
+       rights", "valid NZ work visa required" with no sponsorship
+       alternative, or a NZ listing with NO sponsorship signal -> BLOCKER:
+       "No visa sponsorship / accreditation evidence".
+    4. ALREADY SEEN: The URL (normalized) or the company + title appears in
+       {previously_seen_jobs} -> BLOCKER: "Already presented on a previous
+       run". A re-post on a different board is the same listing and also
+       fails here.
+
+    For each ACCEPTED listing, score match percentage, list matching skills
+    and gaps, and quote the sponsorship evidence. Report ONLY listings that
+    pass all checks. If no listing passes, return an empty report -- no
+    summary, no alternatives.
+  expected_output: >
+    An evaluation report for each ACCEPTED listing only, including:
+    - Source Tier (TIER 1 NZ board, TIER 2 employer careers page, TIER 4
+      aggregator)
+    - Posting Date Verification (date found, age in days, PASS/FAIL)
+    - NZ Location Verification (exact location wording quoted, PASS/FAIL)
+    - Visa Sponsorship Verification (exact evidence quoted, PASS/FAIL)
+    - Fit Score (0-100%)
+    - Match Classification: BLOCKER / MAJOR MATCH / MINOR GAP
+    - Matching Skills (from CV)
+    - Gaps (missing requirements)
+    - Verdict: PROCEED / REJECT
+
+    Listings failing date (>21 days), location (not NZ), sponsorship (no
+    evidence), structure, or already-seen checks MUST be marked BLOCKER with
+    REJECT verdict and MUST NOT appear in the accepted section. If nothing
+    passes, the entire output is empty.
+  agent: opportunity_reviewer
+
+orchestrate_search_task:
+  description: >
+    Manage the workflow between agents. First, validate the CV Strategist's
+    manifest. Then, validate the Job Scout's extracted data to ensure URLs
+    are present and no data was hallucinated. Finally, compile the
+    Opportunity Reviewer's findings into a final, polished NZ Job Search
+    Dossier.
+
+    FINAL GATE - publish a job line ONLY if the listing has all of:
+      - a verified, resolvable application URL (GATE 1)
+      - a verified posting date <=21 days old from today (GATE 2)
+      - explicit New Zealand location / remote-within-NZ wording quoted from
+        the listing (GATE 3)
+      - explicit sponsorship evidence or INZ accreditation verification
+        quoted in the dossier line (GATE 4)
+      - a PROCEED verdict from the Opportunity Reviewer with no BLOCKER
+      - no match, by URL or by company + title, in {previously_seen_jobs}
+        (GATE 5)
+    Confirm each gate individually before publishing the line. Any listing
+    that fails, or whose evidence you cannot confirm, is dropped entirely --
+    not annotated, not downgraded, not shown "for reference".
+
+    Cross-check GATE 5 yourself against {previously_seen_jobs}: the Scout and
+    the Reviewer may both miss a repeat, and a repeat must never reach the
+    dossier. A role the candidate has already seen is not an opportunity,
+    however strong.
+
+    ORDERING: list qualifying roles Straight-to-Residence / Green List first,
+    then other accredited-employer roles, then INZ-register-verified roles.
+    If the same role appears in several places, keep only the employer's own
+    URL.
+
+    If ZERO listings pass all gates, your final answer MUST be empty. Emit
+    nothing: no dossier, no headings, no "no qualifying jobs found" message,
+    no explanation, no caveats, no suggestions, no next steps. An empty
+    answer is a valid, successful outcome and must not be padded.
+  expected_output: >
+    If at least one listing passes all gates: a highly structured NZ Job
+    Search Dossier containing ONLY those listings, each with its fit score,
+    verified application URL, posting date, quoted NZ-location evidence,
+    quoted visa-sponsorship evidence, source tier, and a brief rationale tied
+    to the candidate's CV.
+
+    If zero listings pass: empty output. Absolutely nothing else.
+  agent: search_orchestrator

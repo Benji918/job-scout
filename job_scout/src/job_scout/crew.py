@@ -9,13 +9,31 @@ import os
 # https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
 
 def get_job_scout_tools():
-    """Get available tools for job_scout based on configured API keys."""
-    tools = [SerperDevTool(), FirecrawlSearchTool(), ScrapeWebsiteTool()]
-    
+    """Get available tools for job_scout based on configured API keys.
+
+    Each tool is only loaded when its API key is set, so a missing key
+    fails that search path gracefully instead of crashing the crew.
+    """
+    tools = []
+
+    if os.getenv("SERPER_API_KEY"):
+        tools.append(SerperDevTool())
+    if os.getenv("FIRECRAWL_API_KEY"):
+        tools.append(FirecrawlSearchTool())
+        tools.append(ScrapeWebsiteTool())
+    else:
+        # ScrapeWebsiteTool doesn't need a key; include it directly.
+        tools.append(ScrapeWebsiteTool())
+
     # Add EXASearchTool only if API key is available
     if os.getenv("EXA_API_KEY"):
         tools.append(EXASearchTool())
-    
+
+    if not tools:
+        raise RuntimeError(
+            "No job-scout tools could be created: set at least one of "
+            "SERPER_API_KEY, FIRECRAWL_API_KEY or EXA_API_KEY in .env"
+        )
     return tools
 
 @CrewBase

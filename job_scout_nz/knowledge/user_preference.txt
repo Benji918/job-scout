@@ -1,0 +1,7 @@
+User name is John Doe.
+User is an AI Engineer / Python Backend Developer.
+User is interested in AI Agents and backend engineering (Django, FastAPI).
+User is targeting New Zealand roles from INZ accredited employers that
+sponsor an Accredited Employer Work Visa (AEWV) or Straight-to-Residence.
+User is open to Auckland, Wellington, Christchurch, Hamilton, Dunedin,
+or remote-within-NZ roles.
