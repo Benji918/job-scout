@@ -44,10 +44,15 @@ scout_jobs_task:
     Work the tiers in order.
 
     1. TIER 1 - NZ JOB BOARDS (DO THIS FIRST, SPEND MOST EFFORT HERE)
-       - Serper patterns (rotate each technology keyword from the manifest:
+       - SEEK NZ remote-jobs hub: open https://nz.seek.com/remote-jobs
+         directly (Firecrawl/scrape it) and extract matching Python /
+         Django / FastAPI / AI listings; check each posting's date and
+         sponsorship evidence. Then run Serper patterns against SEEK's
+         search index (rotate each technology keyword from the manifest:
          python, django, fastapi, "machine learning", "AI engineer"):
          site:seek.co.nz ("python") "work visa" OR "AEWV" OR "accredited employer"
          site:seek.co.nz ("django" OR "fastapi") "visa sponsorship"
+         site:nz.seek.com/remote-jobs ("python" OR "django" OR "fastapi" OR "AI")
          site:trademe.co.nz/jobs ("python") ("accredited" OR "visa sponsorship" OR "AEWV")
          site:workhere.co.nz ("python" OR "django" OR "AI engineer") "New Zealand"
          site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com ("python") ("New Zealand" OR "Auckland" OR "Wellington") ("visa sponsorship" OR "AEWV" OR "accredited")
@@ -166,12 +171,22 @@ scout_jobs_task:
 review_opportunities_task:
   description: >
     Evaluate the raw NZ job listings from the Job Scout against the user's
-    {cv_content}. Score each job, identifying any BLOCKERs (dealbreakers like
-    location, right-to-work, or no sponsorship) or MAJOR MATCHES. Filter out
-    roles that are a poor fit. Pass the analyzed, ranked list back to the
-    orchestrator.
+    {cv_content}. Score each job as a percentage of the job's stated
+    requirements that the candidate demonstrably meets, identifying
+    BLOCKERs (dealbreakers like location, right-to-work, or no
+    sponsorship) or MAJOR MATCHES.
 
-    MANDATORY VERIFICATION - REJECT IMMEDIATELY IF:
+    FIT THRESHOLD - recommend at >=50%: a listing that scores 50% or higher
+    on the capability fit (meets at least half of the requirements you can
+    assess from the listing) is a RECOMMENDATION, provided it passes all of
+    the hard checks below (location, sponsorship, freshness, novelty). List
+    matching skills AND the missing requirements for every 50-100% listing
+    so the candidate can see why it falls short or fits. Below 50% ->
+    REJECT. "Nice to have" or "preferred" requirements never count against
+    the score; only listed must-haves do.
+
+    MANDATORY HARD VERIFICATION - REJECT IMMEDIATELY IF (these are not
+    relaxed by the 50% threshold):
     1. POSTING DATE > 21 DAYS AGO: Check "posted X days ago", "posted on
        [date]", "X days ago", "X weeks ago". If date > 21 days or missing ->
        BLOCKER: "Stale posting".
@@ -187,21 +202,27 @@ review_opportunities_task:
        run". A re-post on a different board is the same listing and also
        fails here.
 
-    For each ACCEPTED listing, score match percentage, list matching skills
-    and gaps, and quote the sponsorship evidence. Report ONLY listings that
-    pass all checks. If no listing passes, return an empty report -- no
-    summary, no alternatives.
+    For each listing, score capability match as a percentage of assessable
+    must-have requirements. Report ALL listings that pass the four hard
+    checks, and within those mark every listing scoring >=50% as a
+    RECOMMENDATION (include its matching skills AND its gaps so the
+    candidate can judge). Listings below 50% may be passed to the
+    orchestrator only as clearly-labelled non-recommendations, or dropped.
+    Quote the sponsorship evidence. If no listing passes the hard checks,
+    return an empty report -- no summary, no alternatives.
   expected_output: >
-    An evaluation report for each ACCEPTED listing only, including:
+    An evaluation report for each listing that passed the hard checks only,
+    including:
     - Source Tier (TIER 1 NZ board, TIER 2 employer careers page, TIER 4
       aggregator)
     - Posting Date Verification (date found, age in days, PASS/FAIL)
     - NZ Location Verification (exact location wording quoted, PASS/FAIL)
     - Visa Sponsorship Verification (exact evidence quoted, PASS/FAIL)
-    - Fit Score (0-100%)
+    - Fit Score (0-100%, % of assessable must-have requirements met)
+    - Recommendation: RECOMMENDED (>=50%) / NOT RECOMMENDED (<50%)
     - Match Classification: BLOCKER / MAJOR MATCH / MINOR GAP
     - Matching Skills (from CV)
-    - Gaps (missing requirements)
+    - Gaps (missing must-have requirements; "nice to have" items excluded)
     - Verdict: PROCEED / REJECT
 
     Listings failing date (>21 days), location (not NZ), sponsorship (no
@@ -246,8 +267,14 @@ orchestrate_search_task:
     nothing: no dossier, no headings, no "no qualifying jobs found" message,
     no explanation, no caveats, no suggestions, no next steps. An empty
     answer is a valid, successful outcome and must not be padded.
+
+    REVIEWER VERDICTS: the Opportunity Reviewer classifies each listing as a
+    RECOMMENDATION (capability fit >=50% AND all hard checks passed) or NOT
+    RECOMMENDED (<50%). Publish only RECOMMENDED listings, sorted highest
+    fit score first; keep the candidate's attention on 50%+ matches, not
+    perfect ones.
   expected_output: >
-    If at least one listing passes all gates: a highly structured NZ Job
+    If at least one listing is RECOMMENDED: a highly structured NZ Job
     Search Dossier containing ONLY those listings, each with its fit score,
     verified application URL, posting date, quoted NZ-location evidence,
     quoted visa-sponsorship evidence, source tier, and a brief rationale tied

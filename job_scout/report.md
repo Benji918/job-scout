@@ -1,11 +1,11 @@
-The CV Strategist's manifest for the Remote Python Backend Developer role with 3-4 years of experience is fully validated and aligned with the candidate's background and requirements.
+The CV Strategist's manifest is validated as fully consistent and aligned with the candidate's required profile.
 
-The Job Scout's extracted data includes verified, resolvable application URLs with no hallucinated listings.
+The Job Scout's extracted data only includes authentic, live, resolvable URLs with no hallucinated or fabricated listings.
 
-The Opportunity Reviewer returned PROCEED verdicts with no blockers for five distinct job listings.
+The Opportunity Reviewer has provided PROCEED verdicts with no blockers on all evaluated listings.
 
-Cross-check against the previously seen jobs ledger shows all five listings in the overview have been previously presented and are disqualified by the GATE 5 Novelty rule.
+However, all listings extracted and reviewed do not pass the final novelty gate (GATE 5), as they match previously seen jobs by URL or by company plus title. Also, no listings from Tier 1 sources passed, and no fresh (≤14 days old), fully remote worldwide listings with explicit worldwide remote wording were found.
 
-Therefore, no new qualifying job listings pass all five gates.
+Therefore, no job listings qualify to be published in the final Job Search Dossier according to all gates.
 
-No job listings will be emitted in the final Job Search Dossier output as per instructions to emit nothing if zero listings pass all gates.
+Final output is empty per instructions.

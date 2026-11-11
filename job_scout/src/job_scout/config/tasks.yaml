@@ -145,10 +145,16 @@ scout_jobs_task:
 review_opportunities_task:
   description: >
     Evaluate the raw job listings from the Job Scout against the user's
-    {cv_content}. Score each job, identifying any BLOCKERs (dealbreakers like
-    location/clearance) or MAJOR MATCHES. Filter out roles that are a poor fit.
-    Pass the analyzed, ranked list back to the orchestrator.
+    {cv_content}. Score each listing as a percentage of the job's stated
+    must-have requirements that the candidate demonstrably meets.
+    "Nice to have" / "preferred" requirements never count against the
+    score. A listing scoring >=50% is a RECOMMENDATION, provided it
+    passes all of the hard checks below (freshness, remote scope,
+    structure, novelty) -- list its matching skills AND its missing
+    requirements. Below 50% -> not recommended.
     
+    MANDATORY HARD VERIFICATION - REJECT IMMEDIATELY IF (these are NOT
+    relaxed by the 50% threshold):
     MANDATORY VERIFICATION - REJECT IMMEDIATELY IF:
     1. POSTING DATE > 14 DAYS AGO: Check "posted X days ago", "posted on [date]", 
        "X days ago", "X weeks ago". If date > 14 days or missing → BLOCKER: "Stale posting"
@@ -165,19 +171,23 @@ review_opportunities_task:
        "Remote - Anywhere", "Global Remote", "Work from Anywhere", 
        "Remote (Worldwide)", "Fully Remote" with no region restriction
     
-    For each ACCEPTED listing, score match percentage, list matching skills and gaps.
-    Report ONLY listings that pass all checks. Do not revisit, retry, or
-    re-justify a rejected listing, and do not pass rejected listings forward.
-    If no listing passes, return an empty report -- no summary, no alternatives.
+    For each listing that passes the hard checks, score capability fit as a
+    percentage of assessable must-have requirements. Mark every listing
+    scoring >=50% as a RECOMMENDATION and include its matching skills AND
+    gaps so the candidate can judge. Do not revisit, retry, or re-justify a
+    rejected listing, and do not pass rejected listings forward. If no
+    listing passes the hard checks, return an empty report -- no summary,
+    no alternatives.
   expected_output: >
     An evaluation report for each ACCEPTED listing only, including:
     - Source Tier (TIER 1 company career page/ATS, TIER 2 niche board, TIER 3 aggregator)
     - Posting Date Verification (date found, age in days, PASS/FAIL)
     - Remote Type Verification (exact location wording quoted, PASS/FAIL)
-    - Fit Score (0-100%)
+    - Fit Score (0-100%, % of assessable must-have requirements met)
+    - Recommendation: RECOMMENDED (>=50%) / NOT RECOMMENDED (<50%)
     - Match Classification: BLOCKER / MAJOR MATCH / MINOR GAP
     - Matching Skills (from CV)
-    - Gaps (missing requirements)
+    - Gaps (missing must-have requirements; "nice to have" excluded)
     - Verdict: PROCEED / REJECT
     
     Listings failing date (>14 days), remote scope (region-locked or ambiguous),
@@ -209,7 +219,10 @@ orchestrate_search_task:
     
     ORDERING: list qualifying roles with TIER 1 (company career page / ATS) first,
     then TIER 2 (niche boards), then TIER 3 (aggregators). If the same role
-    appears in several places, keep only the employer's own URL.
+    appears in several places, keep only the employer's own URL. Within each
+    tier, sort by fit score, highest first. Publish only listings the
+    Opportunity Reviewer marked RECOMMENDED (capability fit >=50% and all
+    hard checks passed).
     
     If ZERO listings pass all five gates, your final answer MUST be empty.
     Emit nothing: no dossier, no headings, no "no qualifying jobs found"

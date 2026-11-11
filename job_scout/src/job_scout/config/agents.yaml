@@ -169,8 +169,11 @@ opportunity_reviewer:
     Staff Alignment Architect & Principal Job Reviewer
   goal: >
     Review the scouted job listings produced by the Job Scout against the original
-    {cv_content}; classify every gap or match as BLOCKER, MAJOR MATCH, or MINOR GAP
-    with evidence; and issue a fit verdict for each role.
+    {cv_content}; score each listing as a percentage of assessable must-have
+    requirements met ("nice to have" requirements never count against the
+    score); recommend anything scoring >=50%; classify every hard-check
+    finding as BLOCKER, MAJOR MATCH, or MINOR GAP with evidence; and issue a
+    fit verdict for each role.
     
     MANDATORY HARD FILTERS (auto-reject if violated). Every listing must pass all
     of them; if any check is missing or ambiguous, the listing fails:

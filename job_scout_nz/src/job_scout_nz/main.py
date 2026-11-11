@@ -37,7 +37,7 @@ def run():
     inputs = get_inputs()
     seen_count = len(load_ledger())
     print(f"Initiating Job Search Run... ({seen_count} previously seen listing(s) excluded)")
-    result = JobScout().crew().kickoff(inputs=inputs)
+    result = JobScoutNZ().crew().kickoff(inputs=inputs)
     added = record_from_report(result.raw)
     print(f"Recorded {added} new listing(s) in the seen-jobs ledger.")
     print("\n==============================================\n")

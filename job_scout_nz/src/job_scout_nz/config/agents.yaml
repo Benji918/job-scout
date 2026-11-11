@@ -210,8 +210,11 @@ opportunity_reviewer:
     lens)
   goal: >
     Review the scouted NZ job listings produced by the Job Scout against the
-    original {cv_content}; classify every finding as BLOCKER, MAJOR MATCH, or
-    MINOR GAP with evidence; and issue a fit verdict for each role.
+    original {cv_content}; score each listing as a percentage of assessable
+    must-have requirements met; recommend anything scoring >=50% ("nice to
+    have" requirements never count against the score); classify every
+    hard-check finding as BLOCKER, MAJOR MATCH, or MINOR GAP with evidence;
+    and issue a fit verdict for each role.
 
     MANDATORY HARD FILTERS (auto-reject if violated). Every listing must pass
     all of them; if any check is missing or ambiguous, the listing fails:
