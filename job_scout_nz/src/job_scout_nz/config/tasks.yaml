@@ -37,7 +37,7 @@ scout_jobs_task:
   description: >
     Using the Search Manifest validated by the orchestrator, execute DIVERSE
     searches across MULTIPLE New Zealand job boards and search engines to
-    find FRESH (<=21 days old), NZ-BASED job postings where the employer is
+    find FRESH (<=14 days old), NZ-BASED job postings where the employer is
     accredited or offers visa sponsorship (AEWV / Straight-to-Residence).
 
     REQUIRED SEARCH STRATEGY WITH DATE, LOCATION & SPONSORSHIP FILTERS:
@@ -53,6 +53,8 @@ scout_jobs_task:
          site:seek.co.nz ("python") "work visa" OR "AEWV" OR "accredited employer"
          site:seek.co.nz ("django" OR "fastapi") "visa sponsorship"
          site:nz.seek.com/remote-jobs ("python" OR "django" OR "fastapi" OR "AI")
+         site:seek.co.nz ("software engineer") ("python" OR "backend") ("visa sponsorship" OR "AEWV" OR "accredited")
+         site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com ("software engineer") ("python" OR "backend") ("New Zealand" OR "Auckland" OR "Wellington")
          site:trademe.co.nz/jobs ("python") ("accredited" OR "visa sponsorship" OR "AEWV")
          site:workhere.co.nz ("python" OR "django" OR "AI engineer") "New Zealand"
          site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com ("python") ("New Zealand" OR "Auckland" OR "Wellington") ("visa sponsorship" OR "AEWV" OR "accredited")
@@ -80,13 +82,13 @@ scout_jobs_task:
          register. Record the evidence (or the absence).
 
     4. TIER 4 - AGGREGATORS (LAST RESORT ONLY)
-       - LINKEDIN: site:linkedin.com/jobs ("python" OR "django" OR "fastapi" OR "AI engineer") ("New Zealand") ("visa sponsorship" OR "AEWV" OR "accredited") "posted 1 day ago" OR "posted 2 days ago" OR ... OR "posted 3 weeks ago"
+       - LINKEDIN: site:linkedin.com/jobs ("python" OR "django" OR "fastapi" OR "AI engineer") ("New Zealand") ("visa sponsorship" OR "AEWV" OR "accredited") "posted 1 day ago" OR "posted 2 days ago" OR ... OR "posted 2 weeks ago"
        - Indeed NZ: site:nz.indeed.com ("python" OR "django" OR "fastapi") ("visa sponsorship" OR "AEWV") "posted 1 day" OR "posted 3 days" OR ... OR "posted 14 days"
 
     5. EXA (Neural search) - run one query per technology keyword
-       (recency_days=21 each):
-       "New Zealand python backend developer (Django or FastAPI) job offering visa sponsorship or from an accredited employer, posted last 3 weeks"
-       "New Zealand AI / machine learning engineer (Python, LLMs, MLOps) job sponsoring work visa, posted last 3 weeks"
+       (recency_days=14 each):
+       "New Zealand python backend developer (Django or FastAPI) job offering visa sponsorship or from an accredited employer, posted last 2 weeks"
+       "New Zealand AI / machine learning engineer (Python, LLMs, MLOps) job sponsoring work visa, posted last 2 weeks"
 
     6. FIRECRAWL - Open and scrape each candidate URL (NZ board or employer
        careers page first):
@@ -117,7 +119,7 @@ scout_jobs_task:
 
     HARD GATE - a listing qualifies ONLY if ALL of the following are true:
       1. You observed it in live tool output during this run.
-      2. Its posting date is present on the page and is <=21 days old when
+      2. Its posting date is present on the page and is <=14 days old when
          measured against today's date. No date, vague date, or a date you
          had to infer = NOT QUALIFIED.
       3. Its location is explicitly New Zealand (or remote within NZ).
@@ -137,7 +139,7 @@ scout_jobs_task:
     An empty return is the correct, expected, and complete answer.
 
     VALIDATION CHECKLIST FOR EACH LISTING:
-    v Posted within last 21 days (date extracted from the page and verified)
+    v Posted within last 14 days (date extracted from the page and verified)
     v Location explicitly New Zealand (city/region or "remote within NZ")
     v Sponsorship evidence present ("AEWV", "accredited employer", "visa
       sponsorship", "Straight-to-Residence", "Green List") or INZ register
@@ -145,7 +147,7 @@ scout_jobs_task:
     x REJECT if: Australian location, "NZ citizens/PR only", "valid NZ work
       visa required" with no sponsorship, hybrid/onsite in AU only, or
       ambiguous "Remote"
-    x REJECT if posting date > 21 days old, missing, vague, or inferred
+    x REJECT if posting date > 14 days old, missing, vague, or inferred
     x REJECT if the URL or company + title already appears in
       {previously_seen_jobs}
   expected_output: >
@@ -156,7 +158,7 @@ scout_jobs_task:
       INZ-verified company / LinkedIn NZ / Indeed NZ / Other)
     - Source Tier (TIER 1 NZ board, TIER 2 employer careers page, TIER 4
       aggregator)
-    - Posting Date (verified, within last 21 days)
+    - Posting Date (verified, within last 14 days)
     - NZ Location (city/region, quoted from the listing)
     - Visa Sponsorship Evidence (the exact sponsorship wording quoted from
       the listing, or the INZ accredited-employer verification result)
@@ -187,8 +189,8 @@ review_opportunities_task:
 
     MANDATORY HARD VERIFICATION - REJECT IMMEDIATELY IF (these are not
     relaxed by the 50% threshold):
-    1. POSTING DATE > 21 DAYS AGO: Check "posted X days ago", "posted on
-       [date]", "X days ago", "X weeks ago". If date > 21 days or missing ->
+    1. POSTING DATE > 14 DAYS AGO: Check "posted X days ago", "posted on
+       [date]", "X days ago", "X weeks ago". If date > 14 days or missing ->
        BLOCKER: "Stale posting".
     2. NON-NZ LOCATION: Australian cities or regions, trans-Tasman postings
        where only the AU branch is hiring, no NZ location stated, or a bare
@@ -225,7 +227,7 @@ review_opportunities_task:
     - Gaps (missing must-have requirements; "nice to have" items excluded)
     - Verdict: PROCEED / REJECT
 
-    Listings failing date (>21 days), location (not NZ), sponsorship (no
+    Listings failing date (>14 days), location (not NZ), sponsorship (no
     evidence), structure, or already-seen checks MUST be marked BLOCKER with
     REJECT verdict and MUST NOT appear in the accepted section. If nothing
     passes, the entire output is empty.
@@ -241,7 +243,7 @@ orchestrate_search_task:
 
     FINAL GATE - publish a job line ONLY if the listing has all of:
       - a verified, resolvable application URL (GATE 1)
-      - a verified posting date <=21 days old from today (GATE 2)
+      - a verified posting date <=14 days old from today (GATE 2)
       - explicit New Zealand location / remote-within-NZ wording quoted from
         the listing (GATE 3)
       - explicit sponsorship evidence or INZ accreditation verification

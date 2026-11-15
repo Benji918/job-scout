@@ -27,7 +27,7 @@ def get_inputs():
         - Django/FastAPI Developer
         - Junior–Mid Backend Engineer
         """,
-        "job_description": "New Zealand-based Python Backend Developer / Software Engineer with 3-4 years of hands-on production experience, offered by an Immigration NZ accredited employer or with explicit visa sponsorship (Accredited Employer Work Visa / AEWV, Straight-to-Residence, Green List). Comfortable working across the full backend lifecycle: API design, database optimization, testing, CI/CD, deployment, monitoring, and cross-functional collaboration. Frameworks: Django, Flask, FastAPI. Databases: MySQL, MongoDB, PostgreSQL, Redis. DevOps/Infra: Docker, Kubernetes, Git, GitHub Actions, HashiCorp Vault, Grafana, Loki, DigitalOcean. Open to Auckland, Wellington, Christchurch, Hamilton, Dunedin, or remote-within-NZ roles."
+        "job_description": "Any New Zealand software engineering role (software engineer, backend developer, Python developer, platform/DevOps, AI/ML engineer) with a Python backend focus: REST APIs, Django, Flask, FastAPI, databases, Docker/Kubernetes, CI/CD. From an INZ accredited employer or with explicit visa sponsorship (AEWV, Straight-to-Residence, Green List). Posted within the past 2 weeks. Open to Auckland, Wellington, Christchurch, Hamilton, Dunedin, or remote-within-NZ."
     }
 
 def run():

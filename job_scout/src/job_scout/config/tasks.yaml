@@ -42,6 +42,8 @@ scout_jobs_task:
          site:jobs.ashbyhq.com ("python") ("django" OR "fastapi") "remote"
          site:apply.workable.com ("python") ("django" OR "fastapi") "remote"
          ("python" OR "django" OR "fastapi") "remote" site:<target-company-domain>/careers
+         site:boards.greenhouse.io OR site:jobs.lever.co OR site:jobs.ashbyhq.com
+         ("software engineer") ("python" OR "backend") "remote"
        TECH-DEPTH BOOLEANS (rotate through each technology so no stack
        is missed; every variant must still pass the 14-day + worldwide
        filters):

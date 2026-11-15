@@ -27,7 +27,7 @@ def get_inputs():
         - Django/FastAPI Developer
         - Junior–Mid Backend Engineer
         """,
-        "job_description": "Remote Python Backend Developer with 3–4 years of hands-on production experience. Comfortable working across the full backend lifecycle: API design, database optimization, testing, CI/CD, deployment, monitoring, and cross-functional collaboration with frontend/client teams. Backend Engineer specializing in Python, with hands-on production experience building REST APIs, optimizing databases, and shipping backend systems for multi-user platforms. Background spans contract roles, an internship, and independent project work — all remote. Comfortable working across the full backend lifecycle: API design, database optimization, testing, CI/CD, deployment, monitoring, and cross-functional collaboration with frontend/client teams. Frameworks: Django, Flask, FastAPI Databases: MySQL, MongoDB, PostgreSQL, Redis DevOps/Infra: Docker, Kubernetes, Git, GitHub Actions, HashiCorp Vault, Grafana, Loki, DigitalOcean"
+        "job_description": "Any software engineering role (software engineer, backend developer, Python developer, API engineer, platform/DevOps, AI/ML engineer) with a Python backend focus: REST APIs, Django, Flask, FastAPI, databases (PostgreSQL, MySQL, MongoDB, Redis), Docker/Kubernetes, CI/CD. Posted within the past 2 weeks on job boards. Fully remote (worldwide) as before."
     }
 
 def run():

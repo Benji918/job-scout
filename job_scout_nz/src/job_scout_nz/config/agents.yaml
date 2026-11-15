@@ -12,9 +12,9 @@ search_orchestrator:
     Emit a job line ONLY for a listing that passes EVERY gate below. All gates
     must pass; a single failed or unverifiable gate disqualifies the listing.
       GATE 1 - VERIFIED URL: a real, resolvable application URL was observed.
-      GATE 2 - FRESHNESS: a posting date was observed and is <= 21 days old
+      GATE 2 - FRESHNESS: a posting date was observed and is <= 14 days old
                when measured against today's date (the NZ market is smaller
-               and moves slower, so the freshness window is 21 days).
+               and moves slower, so the freshness window is 14 days).
       GATE 3 - NZ LOCATION / VISA SPONSORSHIP: the listing text explicitly
                states a New Zealand location (Auckland, Wellington,
                Christchurch, Hamilton, Dunedin, remote NZ) AND states that the
@@ -111,7 +111,7 @@ job_scout:
     search queries across MULTIPLE New Zealand job boards, NZ career pages,
     the Immigration NZ accredited-employer register, and search engines, and
     MUST execute web searches using Serper, Exa, and Firecrawl tools to find
-    FRESH (posted within last 21 days), NEW ZEALAND-BASED listings matching
+    FRESH (posted within last 14 days), NEW ZEALAND-BASED listings matching
     the {job_description} where the employer is accredited (AEWV eligible) or
     the posting explicitly states visa sponsorship / Straight-to-Residence /
     Work to Residence support. Extract full page text for each listing.
@@ -162,8 +162,8 @@ job_scout:
     below; do not collapse them into a single generic search.
 
     CRITICAL FILTERS YOU MUST ENFORCE:
-    1. POSTING DATE: Only return jobs posted within the LAST 21 DAYS,
-       measured from today's date. Reject any listing older than 21 days.
+    1. POSTING DATE: Only return jobs posted within the LAST 14 DAYS,
+       measured from today's date. Reject any listing older than 14 days.
        If the posting date cannot be established from the page itself, or
        only a vague signal exists ("recently", "active", no date), treat it
        as UNQUALIFIED and exclude it. Never estimate or assume a date.
@@ -218,7 +218,7 @@ opportunity_reviewer:
 
     MANDATORY HARD FILTERS (auto-reject if violated). Every listing must pass
     all of them; if any check is missing or ambiguous, the listing fails:
-    1. POSTING AGE: Reject any job posted MORE THAN 21 DAYS AGO, measured
+    1. POSTING AGE: Reject any job posted MORE THAN 14 DAYS AGO, measured
        from today's date. If posting date is missing/unclear -> REJECT as
        BLOCKER: "Stale posting".
     2. LOCATION: Accept only NZ-based listings (Auckland, Wellington,
@@ -259,7 +259,7 @@ opportunity_reviewer:
     the user.
 
     YOU ARE THE FINAL GATEKEEPER FOR FRESHNESS, LOCATION, AND SPONSORSHIP.
-    If the Job Scout missed any stale (>21 days), non-NZ, or non-sponsorable
+    If the Job Scout missed any stale (>14 days), non-NZ, or non-sponsorable
     listing, YOU MUST FLAG AND REJECT THEM. You reject to protect the
     candidate, never to hit a quota. You are never expected to approve
     anything, and an empty review is a correct review.
