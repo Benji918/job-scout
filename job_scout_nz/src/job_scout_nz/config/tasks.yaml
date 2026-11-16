@@ -43,6 +43,38 @@ scout_jobs_task:
     REQUIRED SEARCH STRATEGY WITH DATE, LOCATION & SPONSORSHIP FILTERS:
     Work the tiers in order.
 
+    AGGRESSIVE SEARCH MANDATE (NON-NEGOTIABLE):
+    - Execute AT LEAST 12 distinct search queries before returning, rotating
+      role keywords (python, django, fastapi, "software engineer",
+      "backend engineer", "AI engineer") across source patterns (SEEK NZ,
+      Trade Me Jobs, WorkHere, ATS boards, employer career pages,
+      aggregators).
+    - Execute AT LEAST 2 EXA neural queries per technology keyword.
+    - Scrape AT LEAST 8 candidate pages in full (Firecrawl /
+      ScrapeWebsiteTool), and follow at least 2 pages of pagination on any
+      board search you run.
+    - If a query returns nothing, retry ONCE with an alternate title
+      phrasing ("software engineer", "backend engineer", "python
+      developer", "SWE", "platform engineer", "ML engineer"), then move
+      on. Never loop on a query that keeps returning nothing.
+    - Returning zero listings is valid ONLY after the full effort above;
+      if you return nothing, append a final "SEARCH EFFORT LOG" section
+      listing every query executed and every page scraped so the
+      orchestrator can verify the run was thorough.
+    TOOL FAILURE HANDLING (NON-NEGOTIABLE):
+    - If a search tool returns an ERROR (rate limit, "Not enough credits",
+      403, timeout), DO NOT retry it more than 2 times total in the whole
+      run. After that, STOP using that tool and switch to your other tools
+      (Exa, Firecrawl search, direct page scraping) for the remaining
+      passes. Record the failure in the SEARCH EFFORT LOG.
+    - If a scraped page returns a bot-wall ("Just a moment...", captcha,
+      JavaScript-required), DO NOT re-scrape it. Skip the page, note it in
+      the SEARCH EFFORT LOG, and continue with a different source.
+    - Never repeat a tool call with IDENTICAL arguments. Identical retries
+      waste budget and stop the task.
+    - Budget your run: finish within your iteration limit. Prefer shipping
+      the listings you verified over exhausting every tool.
+
     1. TIER 1 - NZ JOB BOARDS (DO THIS FIRST, SPEND MOST EFFORT HERE)
        - SEEK NZ remote-jobs hub: open https://nz.seek.com/remote-jobs
          directly (Firecrawl/scrape it) and extract matching Python /
@@ -119,9 +151,11 @@ scout_jobs_task:
 
     HARD GATE - a listing qualifies ONLY if ALL of the following are true:
       1. You observed it in live tool output during this run.
-      2. Its posting date is present on the page and is <=14 days old when
-         measured against today's date. No date, vague date, or a date you
-         had to infer = NOT QUALIFIED.
+      2. Freshness: no evidence shows it is OLDER than 14 days. A posting
+         date on the page, a relative board signal ("posted X days ago",
+         "new"), or retrieval via a date-filtered board URL all count as
+         freshness evidence (quote which one you used). Reject only on
+         POSITIVE evidence of an older date.
       3. Its location is explicitly New Zealand (or remote within NZ).
          Australian locations or a bare "Remote" with no scope = NOT QUALIFIED.
       4. It shows an explicit sponsorship signal, OR you verified the
@@ -137,6 +171,10 @@ scout_jobs_task:
     results found" message, no near-miss roles, no suggestions, no advice.
     Do not relax rule 1-4 to produce a result. Do not invent a listing.
     An empty return is the correct, expected, and complete answer.
+
+    At the very end of your output (after any listings), append a short
+    "SEARCH EFFORT LOG" section: number of distinct queries executed,
+    number of pages scraped, and the 2-3 highest-value sources you mined.
 
     VALIDATION CHECKLIST FOR EACH LISTING:
     v Posted within last 14 days (date extracted from the page and verified)
@@ -187,11 +225,19 @@ review_opportunities_task:
     REJECT. "Nice to have" or "preferred" requirements never count against
     the score; only listed must-haves do.
 
+    NOVELTY AUTHORITY (NON-NEGOTIABLE): For the already-seen check, the
+    PREVIOUSLY SEEN JOBS ledger injected into this task description is the
+    ONLY source of truth. Do NOT use search_memory results to judge
+    novelty: memories describe PAST runs, not the current ledger. If a
+    listing is not in the injected ledger, it is NEW.
+
     MANDATORY HARD VERIFICATION - REJECT IMMEDIATELY IF (these are not
     relaxed by the 50% threshold):
     1. POSTING DATE > 14 DAYS AGO: Check "posted X days ago", "posted on
-       [date]", "X days ago", "X weeks ago". If date > 14 days or missing ->
-       BLOCKER: "Stale posting".
+       [date]", "X days ago", "X weeks ago", or date-filtered board URLs.
+       Reject only on POSITIVE evidence of a date older than 14 days. A
+       missing date with a board-recency signal is a MINOR GAP, not a
+       BLOCKER.
     2. NON-NZ LOCATION: Australian cities or regions, trans-Tasman postings
        where only the AU branch is hiring, no NZ location stated, or a bare
        "Remote" with no scope -> BLOCKER: "Not a New Zealand listing".
@@ -199,6 +245,7 @@ review_opportunities_task:
        rights", "valid NZ work visa required" with no sponsorship
        alternative, or a NZ listing with NO sponsorship signal -> BLOCKER:
        "No visa sponsorship / accreditation evidence".
+    NOVELTY AUTHORITY (NON-NEGOTIABLE): For already-seen / GATE 5 decisions,     the PREVIOUSLY SEEN JOBS ledger injected into the task description is the     ONLY source of truth. Do NOT use search_memory results to judge novelty:     memories store conclusions from PAST runs, which may describe ledgers that     no longer exist or different configs. If a listing is not in the injected     ledger, it is NEW - no matter what a memory says.
     4. ALREADY SEEN: The URL (normalized) or the company + title appears in
        {previously_seen_jobs} -> BLOCKER: "Already presented on a previous
        run". A re-post on a different board is the same listing and also
@@ -255,6 +302,7 @@ orchestrate_search_task:
     that fails, or whose evidence you cannot confirm, is dropped entirely --
     not annotated, not downgraded, not shown "for reference".
 
+    NOVELTY AUTHORITY (NON-NEGOTIABLE): For already-seen / GATE 5 decisions,     the PREVIOUSLY SEEN JOBS ledger injected into the task description is the     ONLY source of truth. Do NOT use search_memory results to judge novelty:     memories store conclusions from PAST runs, which may describe ledgers that     no longer exist or different configs. If a listing is not in the injected     ledger, it is NEW - no matter what a memory says.
     Cross-check GATE 5 yourself against {previously_seen_jobs}: the Scout and
     the Reviewer may both miss a repeat, and a repeat must never reach the
     dossier. A role the candidate has already seen is not an opportunity,

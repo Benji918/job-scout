@@ -29,6 +29,37 @@ scout_jobs_task:
     Work the tiers in order. Do not start on TIER 3 aggregators until TIER 1 and
     TIER 2 passes are complete.
 
+    AGGRESSIVE SEARCH MANDATE (NON-NEGOTIABLE):
+    - Execute AT LEAST 12 distinct search queries before returning, rotating
+      role keywords (python, django, fastapi, "software engineer",
+      "backend engineer", "AI engineer") across source patterns (ATS
+      boards, niche boards, aggregators, company career pages).
+    - Execute AT LEAST 2 EXA neural queries per technology keyword.
+    - Scrape AT LEAST 8 candidate pages in full (Firecrawl /
+      ScrapeWebsiteTool), and follow at least 2 pages of pagination on any
+      board search you run.
+    - If a query returns nothing, retry ONCE with an alternate title
+      phrasing ("software engineer", "backend engineer", "python
+      developer", "SWE", "platform engineer", "ML engineer"), then move
+      on. Never loop on a query that keeps returning nothing.
+    - Returning zero listings is valid ONLY after the full effort above;
+      if you return nothing, append a final "SEARCH EFFORT LOG" section
+      listing every query executed and every page scraped so the
+      orchestrator can verify the run was thorough.
+    TOOL FAILURE HANDLING (NON-NEGOTIABLE):
+    - If a search tool returns an ERROR (rate limit, "Not enough credits",
+      403, timeout), DO NOT retry it more than 2 times total in the whole
+      run. After that, STOP using that tool and switch to your other tools
+      (Exa, Firecrawl search, direct page scraping) for the remaining
+      passes. Record the failure in the SEARCH EFFORT LOG.
+    - If a scraped page returns a bot-wall ("Just a moment...", captcha,
+      JavaScript-required), DO NOT re-scrape it. Skip the page, note it in
+      the SEARCH EFFORT LOG, and continue with a different source.
+    - Never repeat a tool call with IDENTICAL arguments. Identical retries
+      waste budget and stop the task.
+    - Budget your run: finish within your iteration limit. Prefer shipping
+      the listings you verified over exhausting every tool.
+
     1. TIER 1 - COMPANY CAREER PAGES & ATS (DO THIS FIRST, SPEND MOST EFFORT HERE)
        - Search employer-owned career pages and their ATS endpoints directly:
          Greenhouse (boards.greenhouse.io / job-boards.greenhouse.io),
@@ -104,9 +135,11 @@ scout_jobs_task:
     HARD GATE - a listing qualifies ONLY if ALL of the following are true:
       1. You observed it in live tool output during this run (not from memory,
          not from prior runs, not reconstructed).
-      2. Its posting date is present on the page and is ≤14 days old when
-         measured against today's date. No date, vague date, or a date you had to
-         infer = NOT QUALIFIED.
+      2. Freshness: no evidence shows it is OLDER than 14 days. A posting
+         date on the page, a relative board signal ("posted X days ago",
+         "new"), or retrieval via a date-filtered board URL all count as
+         freshness evidence (quote which one you used). Reject only on
+         POSITIVE evidence of an older date.
       3. Its location text explicitly states worldwide / anywhere / global
          remote, or explicitly states there is no region restriction. A bare
          "Remote" with no scope = NOT QUALIFIED.
@@ -120,6 +153,10 @@ scout_jobs_task:
     results found" message, no near-miss roles, no suggestions, no advice.
     Do not relax rule 1, 2, or 3 to produce a result. Do not invent a listing.
     An empty return is the correct, expected, and complete answer.
+
+    At the very end of your output (after any listings), append a short
+    "SEARCH EFFORT LOG" section: number of distinct queries executed,
+    number of pages scraped, and the 2-3 highest-value sources you mined.
 
     VALIDATION CHECKLIST FOR EACH LISTING:
     ✓ Posted within last 14 days (date extracted from the page and verified)
@@ -155,11 +192,18 @@ review_opportunities_task:
     structure, novelty) -- list its matching skills AND its missing
     requirements. Below 50% -> not recommended.
     
+    NOVELTY AUTHORITY (NON-NEGOTIABLE): For the already-seen check, the
+    PREVIOUSLY SEEN JOBS ledger injected into this task description is the
+    ONLY source of truth. Do NOT use search_memory results to judge
+    novelty: memories describe PAST runs, not the current ledger. If a
+    listing is not in the injected ledger, it is NEW.
+
     MANDATORY HARD VERIFICATION - REJECT IMMEDIATELY IF (these are NOT
     relaxed by the 50% threshold):
-    MANDATORY VERIFICATION - REJECT IMMEDIATELY IF:
     1. POSTING DATE > 14 DAYS AGO: Check "posted X days ago", "posted on [date]", 
-       "X days ago", "X weeks ago". If date > 14 days or missing → BLOCKER: "Stale posting"
+       "X days ago", "X weeks ago", or date-filtered board URLs. Reject only on
+       POSITIVE evidence of a date older than 14 days. A missing date with a
+       board-recency signal is a MINOR GAP, not a BLOCKER.
     2. REGION-LOCKED REMOTE: Location contains "Remote US", "Remote UK", "Remote EU", 
        "Remote Canada", "Remote [Country]", "Hybrid", "Onsite", "Office", or any
        timezone/work-authorization constraint → BLOCKER: "Region-locked remote /
@@ -215,6 +259,12 @@ orchestrate_search_task:
     fails, or whose evidence you cannot confirm, is dropped entirely -- not
     annotated, not downgraded, not shown "for reference".
     
+    NOVELTY AUTHORITY (NON-NEGOTIABLE): For GATE 5 decisions, the
+    PREVIOUSLY SEEN JOBS ledger injected into this task description is the
+    ONLY source of truth. Do NOT use search_memory results to judge
+    novelty: memories store conclusions from PAST runs. If a listing is not
+    in the injected ledger, it is NEW.
+
     Cross-check GATE 5 yourself against {previously_seen_jobs}: the Scout and the
     Reviewer may both miss a repeat, and a repeat must never reach the dossier.
     A role the candidate has already seen is not an opportunity, however strong.

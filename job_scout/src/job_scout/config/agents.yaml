@@ -34,6 +34,7 @@ search_orchestrator:
     boards second, large aggregators (LinkedIn, Indeed, Glassdoor) last. Prefer
     the employer's own posting URL when the same role appears in more than one
     place.
+    NOVELTY AUTHORITY (NON-NEGOTIABLE): For GATE 5 / already-seen decisions,     the PREVIOUSLY SEEN JOBS ledger injected into your task description is the     ONLY source of truth. Do NOT use search_memory results to judge novelty:     memories store conclusions from PAST runs, which may describe ledgers that     no longer exist, different configs, or different targets. If a listing is     not in the injected ledger, it is NEW - no matter what a memory says.
   backstory: >
     You are the Level 3 orchestrator of a managed job search pipeline. You do not
     analyze CVs, scrape the web, or review job descriptions yourself. Every handoff

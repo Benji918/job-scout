@@ -40,6 +40,7 @@ search_orchestrator:
     this order -- NZ-specific/accredited boards first, the employer's own NZ
     careers page second, then general aggregators. Prefer the employer's own
     posting URL when the same role appears in more than one place.
+    NOVELTY AUTHORITY (NON-NEGOTIABLE): For already-seen / GATE 5 decisions,     the PREVIOUSLY SEEN JOBS ledger injected into the task description is the     ONLY source of truth. Do NOT use search_memory results to judge novelty:     memories store conclusions from PAST runs, which may describe ledgers that     no longer exist or different configs. If a listing is not in the injected     ledger, it is NEW - no matter what a memory says.
   backstory: >
     You are the Level 3 orchestrator of a managed New Zealand job search
     pipeline. You do not analyze CVs, scrape the web, or review job

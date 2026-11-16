@@ -9,24 +9,15 @@ load_dotenv()
 from job_scout.crew import JobScout
 from job_scout.seen_jobs import format_for_prompt, load_ledger, record_from_report
 
+def _resume_text() -> str:
+    """The candidate's actual resume, stored as knowledge/user_resume.txt."""
+    path = Path(__file__).resolve().parents[2] / "knowledge" / "user_resume.txt"
+    return path.read_text(encoding="utf-8")
+
 def get_inputs():
     return {
         "previously_seen_jobs": format_for_prompt(load_ledger()),
-        "cv_content": """
-        Senior Python Developer with 4+ years of experience.
-        Backend Engineer specializing in Python, with hands-on production experience building REST APIs, optimizing databases, and shipping backend systems for multi-user platforms. 
-        Background spans contract roles, an internship, and independent project work — all remote. Comfortable working across the full backend lifecycle: API design, 
-        database optimization, testing, CI/CD, deployment, monitoring, and cross-functional collaboration with frontend/client teams.
-        Frameworks: Django, Flask, FastAPI
-        Databases: MySQL, MongoDB, PostgreSQL, Redis
-        DevOps/Infra: Docker, Kubernetes, Git, GitHub Actions, HashiCorp Vault, Grafana, Loki, DigitalOcean
-        Best-fit job titles:
-        - Backend Engineer / Backend Developer (Python)
-        - Python Developer
-        - API Engineer
-        - Django/FastAPI Developer
-        - Junior–Mid Backend Engineer
-        """,
+        "cv_content": _resume_text(),
         "job_description": "Any software engineering role (software engineer, backend developer, Python developer, API engineer, platform/DevOps, AI/ML engineer) with a Python backend focus: REST APIs, Django, Flask, FastAPI, databases (PostgreSQL, MySQL, MongoDB, Redis), Docker/Kubernetes, CI/CD. Posted within the past 2 weeks on job boards. Fully remote (worldwide) as before."
     }
 

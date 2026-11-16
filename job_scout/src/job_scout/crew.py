@@ -1,5 +1,6 @@
-from crewai import Agent, Crew, Process, Task
+from crewai import Agent, Crew, Process, Task, PlanningConfig
 from crewai.project import CrewBase, agent, crew, task
+from crewai.knowledge.source.text_file_knowledge_source import TextFileKnowledgeSource
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from crewai_tools import SerperDevTool, FirecrawlSearchTool, EXASearchTool, ScrapeWebsiteTool
 import os
@@ -53,6 +54,7 @@ class JobScout():
     def search_orchestrator(self) -> Agent:
         return Agent(
             config=self.agents_config['search_orchestrator'], # type: ignore[index]
+            inject_date=True,
             verbose=True
         )
 
@@ -60,6 +62,7 @@ class JobScout():
     def cv_strategist(self) -> Agent:
         return Agent(
             config=self.agents_config['cv_strategist'], # type: ignore[index]
+            inject_date=True,
             verbose=True
         )
 
@@ -68,6 +71,18 @@ class JobScout():
         return Agent(
             config=self.agents_config['job_scout'], # type: ignore[index]
             tools=get_job_scout_tools(),
+            planning_config=PlanningConfig(
+                reasoning_effort="medium",
+                max_attempts=2,
+                max_steps=12,
+                max_replans=1,
+                max_step_iterations=8,
+                step_timeout=180,
+            ),
+            inject_date=True,
+            max_iter=40,
+            max_execution_time=1500, # hard 25-minute cap for the scout
+            max_rpm=30,
             verbose=True
         )
 
@@ -75,6 +90,8 @@ class JobScout():
     def opportunity_reviewer(self) -> Agent:
         return Agent(
             config=self.agents_config['opportunity_reviewer'], # type: ignore[index]
+            planning_config=PlanningConfig(reasoning_effort="medium", max_attempts=2),
+            inject_date=True,
             verbose=True
         )
 
@@ -117,6 +134,11 @@ class JobScout():
             tasks=self.tasks, # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
+            planning=True, # CrewPlanner writes a step plan into each task before kickoff
+            skills=["./skills"], # Aggressive-sourcing methodology injected into every agent
+            knowledge_sources=[
+                TextFileKnowledgeSource(file_paths=["user_resume.txt"])
+            ], # The candidate's actual resume (paths resolve under knowledge/), RAG-searchable
             memory=True,
             embedder={
                 "provider": "openai",
